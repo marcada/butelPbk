@@ -59,3 +59,15 @@ export interface Event {
     image_path: string;
     created_at: string;
 }
+
+export interface Package {
+    id: number;
+    name: string;
+    displays_per_showing: number;
+    duration: number;
+    shows_per_day: number;
+    price: number;
+    color: string;
+    created_at?: string;
+    updated_at?: string;
+}

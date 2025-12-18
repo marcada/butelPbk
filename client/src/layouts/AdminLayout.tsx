@@ -32,6 +32,13 @@ export const AdminLayout: React.FC = () => {
                         Events
                     </Link>
 
+                    <div className="pt-4 pb-2 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Tools</div>
+                    <Link to="/admin/simulator" className={`flex items-center px-4 py-3 rounded-xl font-medium transition-colors ${isActive('/admin/simulator')}`}>
+                        Revenue Simulator
+                    </Link>
+
+
+
                     <div className="pt-4 pb-2 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Advertising</div>
                     <Link to="/admin/ads" className={`flex items-center px-4 py-3 rounded-xl font-medium transition-colors ${isActive('/admin/ads')}`}>
                         Advertisements

@@ -22,3 +22,4 @@ Route::apiResource('categories', \App\Http\Controllers\CategoryController::class
 Route::apiResource('posts', \App\Http\Controllers\PostController::class);
 Route::apiResource('events', \App\Http\Controllers\EventController::class);
 Route::apiResource('advertisements', \App\Http\Controllers\AdvertisementController::class);
+Route::apiResource('packages', \App\Http\Controllers\PackageController::class);

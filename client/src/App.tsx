@@ -7,6 +7,7 @@ import { AdminCategories } from './pages/admin/AdminCategories';
 import { AdminAds } from './pages/admin/AdminAds';
 import { AdminPosts } from './pages/admin/AdminPosts';
 import { AdminEvents } from './pages/admin/AdminEvents';
+import { InvestorSimulator } from './pages/admin/InvestorSimulator';
 import './index.css';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
           <Route path="ads" element={<AdminAds />} />
           <Route path="posts" element={<AdminPosts />} />
           <Route path="events" element={<AdminEvents />} />
+          <Route path="simulator" element={<InvestorSimulator />} />
         </Route>
       </Routes>
     </BrowserRouter>
