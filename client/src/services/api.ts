@@ -3,7 +3,7 @@ import type { Ad, Display } from '../types';
 import { format } from 'date-fns';
 
 const client = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api', // Hardcoded for demo
+    baseURL: 'http://localhost:8000/api', // Hardcoded for demo
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
