@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    background: #000;
+    margin: 0;
+    /* overflow: hidden; Removed to allow scrolling on blog pages */
+}
