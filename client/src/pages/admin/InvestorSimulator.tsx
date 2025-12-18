@@ -300,7 +300,7 @@ export const InvestorSimulator: React.FC = () => {
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                             <div className="text-gray-500 text-xs font-bold uppercase mb-4">Структура на Приходи</div>
                             <div className="h-48">
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
                                     <PieChart>
                                         <Pie
                                             data={revenueData}
@@ -473,7 +473,7 @@ export const InvestorSimulator: React.FC = () => {
                             <div className="text-gray-500 text-xs font-bold uppercase mb-4">Распределба на Профит</div>
                             <div className="flex-1 flex gap-6">
                                 <div className="w-1/2 h-full">
-                                    <ResponsiveContainer width="100%" height="100%">
+                                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
                                         <PieChart>
                                             <Pie
                                                 data={profitData}
