@@ -13,6 +13,8 @@ import './index.css';
 
 import { Advertise } from './pages/Advertise';
 import { BusinessDirectory } from './pages/BusinessDirectory';
+import { BusinessLogin } from './pages/business/BusinessLogin';
+import { BusinessDashboard } from './pages/business/BusinessDashboard';
 
 function App() {
   return (
@@ -21,10 +23,12 @@ function App() {
         <Route path="/" element={<PremiumBlog />} />
         <Route path="/street-preview" element={<SimulationLayout />} />
         <Route path="/advertise" element={<Advertise />} />
+
         <Route path="/directory" element={<BusinessDirectory />} />
 
-
-        // ... other imports ...
+        {/* Business Portal */}
+        <Route path="/business/login" element={<BusinessLogin />} />
+        <Route path="/business/:id/dashboard" element={<BusinessDashboard />} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminLayout />}>

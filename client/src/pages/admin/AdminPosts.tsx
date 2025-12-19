@@ -64,6 +64,10 @@ export const AdminPosts: React.FC = () => {
         try {
             const response = await fetch('http://localhost:8000/api/posts', {
                 method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    // Do NOT set Content-Type, browser sets it for FormData
+                },
                 body: data,
             });
 
