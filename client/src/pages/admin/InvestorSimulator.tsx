@@ -7,6 +7,7 @@ interface Shareholder {
     id: number;
     name: string;
     percentage: number;
+    isLocked?: boolean;
 }
 
 export const InvestorSimulator: React.FC = () => {
@@ -21,8 +22,8 @@ export const InvestorSimulator: React.FC = () => {
     // Expenses & Shareholders State
     const [expenses, setExpenses] = useState<number>(0);
     const [shareholders, setShareholders] = useState<Shareholder[]>([
-        { id: 1, name: 'Партнер 1', percentage: 50 },
-        { id: 2, name: 'Партнер 2', percentage: 50 }
+        { id: 1, name: 'Самет', percentage: 50, isLocked: false },
+        { id: 2, name: 'Радован', percentage: 50, isLocked: false }
     ]);
 
     useEffect(() => {
@@ -67,18 +68,80 @@ export const InvestorSimulator: React.FC = () => {
         }
     };
 
-    // Shareholder Actions
-    const addShareholder = () => {
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newPartnerName, setNewPartnerName] = useState('');
+
+    // Shareholder Actions & Logic
+    const recalculatePercentages = (currentShareholders: Shareholder[]): Shareholder[] => {
+        const lockedShareholders = currentShareholders.filter(s => s.isLocked);
+        const unlockedShareholders = currentShareholders.filter(s => !s.isLocked);
+
+        const lockedTotal = lockedShareholders.reduce((sum, s) => sum + s.percentage, 0);
+        const remainingPercentage = Math.max(0, 100 - lockedTotal);
+
+        if (unlockedShareholders.length === 0) return currentShareholders;
+
+        const sharePerPerson = remainingPercentage / unlockedShareholders.length;
+
+        return currentShareholders.map(s => {
+            if (s.isLocked) return s;
+            return { ...s, percentage: Number(sharePerPerson.toFixed(1)) };
+        });
+    };
+
+    const addShareholder = (name: string) => {
         const newId = Math.max(0, ...shareholders.map(s => s.id)) + 1;
-        setShareholders([...shareholders, { id: newId, name: `Партнер ${newId}`, percentage: 0 }]);
+        const newShareholder = { id: newId, name: name || `Партнер ${newId}`, percentage: 0, isLocked: false };
+
+        const newList = [...shareholders, newShareholder];
+        setShareholders(recalculatePercentages(newList));
+        setShowAddModal(false);
+        setNewPartnerName('');
     };
 
     const removeShareholder = (id: number) => {
-        setShareholders(shareholders.filter(s => s.id !== id));
+        const newList = shareholders.filter(s => s.id !== id);
+        setShareholders(recalculatePercentages(newList));
     };
 
-    const updateShareholder = (id: number, field: keyof Shareholder, value: string | number) => {
-        setShareholders(shareholders.map(s => s.id === id ? { ...s, [field]: value } : s));
+    const toggleLock = (id: number) => {
+        setShareholders(shareholders.map(s => s.id === id ? { ...s, isLocked: !s.isLocked } : s));
+    };
+
+    const updateShareholderPercentage = (id: number, value: number) => {
+        // Find the partner
+        const partner = shareholders.find(s => s.id === id);
+        if (!partner) return;
+
+        // If locked, just update and don't redistribute others (or maybe warn?)
+        // Better UX: Temporarily lock this one for the calculation, or assume manual override acts like a lock action
+
+        // Strategy: Update this partner's %. Then redistribute REAMAINING among OTHER UNLOCKED partners.
+        // If this partner was unlocked, we assume for this specific action it stays fixed at the new value.
+
+        const newPercentage = Math.min(100, Math.max(0, value));
+
+        let newList = shareholders.map(s => s.id === id ? { ...s, percentage: newPercentage } : s);
+
+        // Now redistribute others who are NOT locked and NOT the current one being edited
+        const fixedTotal = newList.filter(s => s.isLocked || s.id === id).reduce((sum, s) => sum + s.percentage, 0);
+        const othersToDistribute = newList.filter(s => !s.isLocked && s.id !== id);
+
+        if (othersToDistribute.length > 0) {
+            const remaining = Math.max(0, 100 - fixedTotal);
+            const perPerson = remaining / othersToDistribute.length;
+
+            newList = newList.map(s => {
+                if (s.isLocked || s.id === id) return s;
+                return { ...s, percentage: Number(perPerson.toFixed(1)) };
+            });
+        }
+
+        setShareholders(newList);
+    };
+
+    const updateShareholderName = (id: number, name: string) => {
+        setShareholders(shareholders.map(s => s.id === id ? { ...s, name } : s));
     };
 
     // --- Calculations ---
@@ -405,34 +468,47 @@ export const InvestorSimulator: React.FC = () => {
                                             Партнери за Распределба
                                         </label>
                                         <button
-                                            onClick={addShareholder}
-                                            className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded"
+                                            onClick={() => setShowAddModal(true)}
+                                            className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded transition-colors"
                                         >
                                             <Plus className="w-3 h-3" /> Додади
                                         </button>
                                     </div>
                                     <div className="space-y-3">
                                         {shareholders.map(s => (
-                                            <div key={s.id} className="flex gap-2 items-center">
+                                            <div key={s.id} className="flex gap-2 items-center group">
                                                 <input
-                                                    className="flex-1 text-sm border-gray-200 rounded-lg"
+                                                    className="flex-1 text-sm border-gray-200 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                                                     placeholder="Име"
                                                     value={s.name}
-                                                    onChange={(e) => updateShareholder(s.id, 'name', e.target.value)}
+                                                    onChange={(e) => updateShareholderName(s.id, e.target.value)}
                                                 />
                                                 <div className="relative w-24">
                                                     <input
                                                         type="number"
-                                                        className="w-full pr-6 text-sm border-gray-200 rounded-lg text-right"
+                                                        className={`w-full pr-6 text-sm border-gray-200 rounded-lg text-right focus:ring-indigo-500 focus:border-indigo-500 ${s.isLocked ? 'bg-gray-50 text-gray-500' : ''}`}
                                                         placeholder="0"
                                                         value={s.percentage}
-                                                        onChange={(e) => updateShareholder(s.id, 'percentage', Number(e.target.value))}
+                                                        onChange={(e) => updateShareholderPercentage(s.id, Number(e.target.value))}
                                                     />
                                                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">%</span>
                                                 </div>
+
+                                                <button
+                                                    onClick={() => toggleLock(s.id)}
+                                                    className={`p-2 rounded-lg transition-colors ${s.isLocked ? 'text-indigo-600 bg-indigo-50' : 'text-gray-300 hover:text-gray-500'}`}
+                                                    title={s.isLocked ? "Отклучи процент" : "Заклучи процент"}
+                                                >
+                                                    {s.isLocked ? (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                                    ) : (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></svg>
+                                                    )}
+                                                </button>
+
                                                 <button
                                                     onClick={() => removeShareholder(s.id)}
-                                                    className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50"
+                                                    className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
@@ -440,9 +516,9 @@ export const InvestorSimulator: React.FC = () => {
                                         ))}
 
                                         {/* Validation Message */}
-                                        {shareholders.reduce((acc, curr) => acc + curr.percentage, 0) !== 100 && (
+                                        {Math.abs(shareholders.reduce((acc, curr) => acc + curr.percentage, 0) - 100) > 0.1 && (
                                             <div className="text-xs text-amber-600 font-medium bg-amber-50 px-3 py-2 rounded">
-                                                Внимание: Вкупниот процент на распределба е {shareholders.reduce((acc, curr) => acc + curr.percentage, 0)}% (треба да е 100%)
+                                                Внимание: Вкупниот процент на распределба е {shareholders.reduce((acc, curr) => acc + curr.percentage, 0).toFixed(1)}% (треба да е 100%)
                                             </div>
                                         )}
                                     </div>
@@ -506,6 +582,44 @@ export const InvestorSimulator: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Premium Add Modal */}
+            {showAddModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 transform transition-all">
+                        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white text-center">
+                            <h2 className="text-2xl font-black mb-2">Нов Партнер</h2>
+                            <p className="text-indigo-100 text-sm">Внесете го името на новиот партнер. Системот автоматски ќе ги ребалансира процентите согласно заклучените вредности.</p>
+                        </div>
+                        <div className="p-8">
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Име и Презиме</label>
+                            <input
+                                autoFocus
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg mb-6"
+                                placeholder="Внеси име на партнер"
+                                value={newPartnerName}
+                                onChange={(e) => setNewPartnerName(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && addShareholder(newPartnerName)}
+                            />
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowAddModal(false)}
+                                    className="flex-1 py-3 font-bold text-gray-600 hover:bg-gray-50 rounded-xl transition-colors"
+                                >
+                                    Откажи
+                                </button>
+                                <button
+                                    onClick={() => addShareholder(newPartnerName)}
+                                    className="flex-1 py-3 font-bold bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 transition-all"
+                                >
+                                    Додади Партнер
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
