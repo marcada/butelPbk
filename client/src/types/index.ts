@@ -71,3 +71,19 @@ export interface Package {
     created_at?: string;
     updated_at?: string;
 }
+
+export interface Business {
+    id: number;
+    name: string;
+    categories: string[];
+    location: string;
+    latitude?: number;
+    longitude?: number;
+    package_id: number;
+    package?: Package;
+    image_path?: string;
+    contact_email?: string;
+    contact_phone?: string;
+    created_at?: string;
+    updated_at?: string;
+}

@@ -67,10 +67,8 @@ class AdvertisementController extends Controller
     public function destroy($id)
     {
         $ad = Advertisement::findOrFail($id);
-        if ($ad->carousel_image_path)
-            Storage::disk('public')->delete($ad->carousel_image_path);
-        if ($ad->sidebar_image_path)
-            Storage::disk('public')->delete($ad->sidebar_image_path);
+        if ($ad->web_image_path)
+            Storage::disk('public')->delete($ad->web_image_path);
         if ($ad->billboard_image_path)
             Storage::disk('public')->delete($ad->billboard_image_path);
 
