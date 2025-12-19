@@ -44,7 +44,10 @@ class SimulationController extends Controller
                     'id' => $cmsAd->id,
                     'name' => $cmsAd->title,
                     'type' => 'image',
-                    'content_path' => 'http://localhost:8000/storage/' . $cmsAd->billboard_image_path,
+                    // Pass the raw path (e.g., /storage/covers/...)
+                    'billboard_image_path' => $cmsAd->billboard_image_path,
+                    // Fix content_path for legacy support (avoiding double storage prefix)
+                    'content_path' => 'http://localhost:8000' . $cmsAd->billboard_image_path,
                     'duration' => $duration
                 ],
                 'source' => 'cms_advertisements',
@@ -72,7 +75,7 @@ class SimulationController extends Controller
             ->with('ad')
             ->get();
 
-        // 3. Select One
+        // 3. Select One Deterministically
         if ($campaigns->isEmpty()) {
             return response()->json([
                 'ad' => null,
@@ -81,13 +84,21 @@ class SimulationController extends Controller
             ]);
         }
 
-        // Simple Random Pick for Demo
-        $selected = $campaigns->random();
+        // Calculate time slot for deterministic rotation (20 seconds per ad)
+        $time = \Carbon\Carbon::parse($timeStr);
+        $secondsSinceMidnight = $time->secondsSinceMidnight();
+        $duration = 20;
+        $slotIndex = floor($secondsSinceMidnight / $duration);
+
+        // Cycle through campaigns
+        $campaignIndex = $slotIndex % $campaigns->count();
+        $selected = $campaigns[$campaignIndex];
 
         return response()->json([
             'ad' => $selected->ad,
             'campaign_id' => $selected->id,
-            'debug_active_zones' => $activeTimeZones
+            'debug_active_zones' => $activeTimeZones,
+            'debug_slot' => $slotIndex
         ]);
     }
 }

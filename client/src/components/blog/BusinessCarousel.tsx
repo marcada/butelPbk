@@ -17,7 +17,7 @@ export const BusinessCarousel: React.FC = () => {
                     id: a.id,
                     name: a.title,
                     category: a.client_name,
-                    image: `http://localhost:8000/storage/${a.carousel_image_path}`
+                    image: a.carousel_image_path.startsWith('http') ? a.carousel_image_path : `http://localhost:8000${a.carousel_image_path}`
                 }));
                 // Duplicate items if not enough to fill carousel loop smoothly
                 setBusinesses([...validAds, ...validAds]);

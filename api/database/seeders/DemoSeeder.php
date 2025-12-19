@@ -12,10 +12,38 @@ class DemoSeeder extends Seeder
 {
     public function run(): void
     {
+        // 0. Create Packages
+        \App\Models\Package::create([
+            'name' => 'Basic',
+            'displays_per_showing' => 50,
+            'duration' => 20,
+            'shows_per_day' => 20,
+            'price' => 400,
+            'color' => '#10b981' // emerald-500
+        ]);
+
+        \App\Models\Package::create([
+            'name' => 'Pro',
+            'displays_per_showing' => 100,
+            'duration' => 20,
+            'shows_per_day' => 40,
+            'price' => 700,
+            'color' => '#f59e0b' // amber-500
+        ]);
+
+        \App\Models\Package::create([
+            'name' => 'Enterprise',
+            'displays_per_showing' => 200,
+            'duration' => 20,
+            'shows_per_day' => 80,
+            'price' => 1200,
+            'color' => '#6366f1' // indigo-500
+        ]);
+
         // 1. Create Displays (Detected from slikata.png with HSV)
         Display::create(['name' => 'Billboard 1', 'x' => 60.75, 'y' => 24.22, 'width' => 10.94, 'height' => 32.81]);
         // Manual adjustment for Billboard 2 (User feedback: too big width, but needs more height)
-        Display::create(['name' => 'Billboard 2', 'x' => 37.50, 'y' => 41.43, 'width' => 3.50, 'height' => 12.30]);
+        Display::create(['name' => 'Billboard 2', 'x' => 37.50, 'y' => 41.00, 'width' => 3.50, 'height' => 12.30]);
 
         // 2. Create Ads
         $adCoke = Ad::create([

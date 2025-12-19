@@ -8,12 +8,14 @@ export const Scene: React.FC = () => {
 
     return (
         <div className="relative w-full h-full bg-black overflow-hidden group">
-            <img
-                src="http://127.0.0.1:8000/slikata.png"
-                alt="City Street"
-                className="w-full h-full object-cover opacity-100" // Reset opacity to full to see hotspots clearly
-            />
-
+            {/* Background Image */}
+            <div className="absolute inset-0 z-0">
+                <img
+                    alt="City Street"
+                    className="w-full h-full object-cover opacity-100"
+                    src="http://127.0.0.1:8000/city_bg.png"
+                />
+            </div>
             {/* Dark overlay for better visibility */}
             <div className="absolute inset-0 bg-black/20 pointer-events-none" />
 
@@ -32,8 +34,14 @@ export const Scene: React.FC = () => {
                     {/* Screen Content */}
                     <div className="w-full h-full relative flex items-center justify-center bg-gray-900 text-white">
                         {activeAd ? (
-                            activeAd.type === 'image' ? (
-                                <img src={activeAd.content_path} alt={activeAd.name} className="w-full h-full object-cover" />
+                            activeAd.type === 'image' || activeAd.billboard_image_path ? (
+                                <img
+                                    src={activeAd.billboard_image_path
+                                        ? (activeAd.billboard_image_path.startsWith('http') ? activeAd.billboard_image_path : `http://127.0.0.1:8000${activeAd.billboard_image_path}`)
+                                        : activeAd.content_path}
+                                    alt={activeAd.name}
+                                    className="w-full h-full object-cover"
+                                />
                             ) : (
                                 <div
                                     className="p-1 text-center font-bold leading-tight text-neon-blue flex items-center justify-center h-full w-full break-words whitespace-pre-wrap"

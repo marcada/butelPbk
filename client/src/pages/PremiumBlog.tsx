@@ -136,7 +136,7 @@ const AdSpace: React.FC = () => {
             <div className="absolute top-0 right-0 bg-gray-100 px-3 py-1 rounded-bl-xl text-[10px] font-bold text-gray-400 tracking-wider z-10">ADVERTISEMENT</div>
             <div className="w-full mt-4 rounded-2xl overflow-hidden relative shadow-inner aspect-[9/10]">
                 <img
-                    src={`http://localhost:8000/storage/${ad.sidebar_image_path}`}
+                    src={ad.sidebar_image_path.startsWith('http') ? ad.sidebar_image_path : `http://localhost:8000${ad.sidebar_image_path}`}
                     alt={ad.title}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />

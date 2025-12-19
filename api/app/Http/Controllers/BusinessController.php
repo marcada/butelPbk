@@ -29,7 +29,7 @@ class BusinessController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('business_images', 'public');
+            $path = $request->file('image')->store('covers', 'public');
             $validated['image_path'] = '/storage/' . $path;
         }
 
@@ -38,15 +38,18 @@ class BusinessController extends Controller
         // Handle Billboard Ads
         if ($request->hasFile('ads')) {
             foreach ($request->file('ads') as $adFile) {
-                $path = $adFile->store('advertisements', 'public');
+                $path = $adFile->store('content', 'public');
                 $fullPath = '/storage/' . $path;
 
                 $business->advertisements()->create([
                     'client_name' => $business->name,
                     'title' => 'Автоматска Реклама',
-                    'package_type' => 'web_plus_billboard',
+                    'type_carousel' => true,
+                    'type_billboard' => true,
+                    'type_sidebar' => false,
                     'billboard_image_path' => $fullPath,
-                    // 'web_image_path' => $fullPath, // Optional: use for web too
+                    // Use the Business Cover Image for the Web Carousel if available, otherwise fallback to the billboard ad image
+                    'carousel_image_path' => $business->image_path ?? $fullPath,
                 ]);
             }
         }

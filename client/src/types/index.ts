@@ -12,7 +12,9 @@ export interface Ad {
     id: number;
     name: string;
     type: 'image' | 'text';
-    content_path: string;
+    content_path: string; // Legacy field for Demo data?
+    billboard_image_path?: string;
+    carousel_image_path?: string;
     duration: number;
 }
 
