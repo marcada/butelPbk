@@ -2,8 +2,11 @@ import axios from 'axios';
 import type { Ad, Display } from '../types';
 import { format } from 'date-fns';
 
+export const SERVER_URL = (import.meta.env.VITE_API_URL as string)?.replace(/\/api\/?$/, '') || 'http://localhost:8000';
+export const API_BASE_URL = `${SERVER_URL}/api`;
+
 const client = axios.create({
-    baseURL: (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000/api',
+    baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',

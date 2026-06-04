@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSimulationStore } from '../store/simulationStore';
 import { Scene } from '../components/Scene';
 import { TimeControls } from '../components/TimeControls';
-import { api } from '../services/api';
+import { api, API_BASE_URL } from '../services/api';
 import { 
     TrendingUp, Wallet, Users, BarChart2, Lock, Unlock, Layers,
     Clock, ShieldAlert, CheckCircle2, XCircle
@@ -84,7 +84,7 @@ export const LandingPage: React.FC = () => {
                 console.error("Failed to fetch displays", err);
             });
 
-        fetch('http://localhost:8000/api/packages')
+        fetch(`${API_BASE_URL}/packages`)
             .then(res => res.json())
             .then((data: Package[]) => {
                 setPackages(data);

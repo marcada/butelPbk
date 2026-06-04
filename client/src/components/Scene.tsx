@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSimulationStore } from '../store/simulationStore';
+import { SERVER_URL } from '../services/api';
 
 export const Scene: React.FC = () => {
     const { displays, activeAd } = useSimulationStore();
@@ -47,7 +48,7 @@ export const Scene: React.FC = () => {
                     <img
                         alt="City Street"
                         className="w-full h-full object-fill opacity-100"
-                        src="http://localhost:8000/city_bg.png"
+                        src={`${SERVER_URL}/city_bg.png`}
                     />
                 </div>
                 {/* Dark overlay for better visibility */}
@@ -71,7 +72,7 @@ export const Scene: React.FC = () => {
                                 activeAd.type === 'image' || activeAd.billboard_image_path ? (
                                     <img
                                         src={activeAd.billboard_image_path
-                                            ? (activeAd.billboard_image_path.startsWith('http') ? activeAd.billboard_image_path : `http://localhost:8000${activeAd.billboard_image_path}`)
+                                            ? (activeAd.billboard_image_path.startsWith('http') ? activeAd.billboard_image_path : `${SERVER_URL}${activeAd.billboard_image_path}`)
                                             : activeAd.content_path}
                                         alt={activeAd.name}
                                         className="w-full h-full object-cover"
