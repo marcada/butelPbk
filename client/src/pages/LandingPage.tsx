@@ -23,8 +23,8 @@ export const LandingPage: React.FC = () => {
     const [packages, setPackages] = useState<Package[]>([]);
     const [clientCounts, setClientCounts] = useState<Record<number, number>>({});
     const [expenses, setExpenses] = useState<number>(3000); // Default expenses
-    const [workingHours, setWorkingHours] = useState<number>(24); // Default 24 hours
-    const [occupancy, setOccupancy] = useState<number>(100); // Default 100% occupancy
+    const [startTime, setStartTime] = useState<string>('06:00'); // Default start time
+    const [endTime, setEndTime] = useState<string>('22:00'); // Default end time
     const [shareholders, setShareholders] = useState<Shareholder[]>([
         { id: 1, name: 'MARCADA', percentage: 60, locked: false },
         { id: 2, name: 'Investitor', percentage: 20, locked: false },
@@ -69,14 +69,28 @@ export const LandingPage: React.FC = () => {
             });
     }, []);
 
+    // Dynamic Working Hours Calculation
+    const getWorkingHours = () => {
+        const startHour = parseInt(startTime.split(':')[0]);
+        const endHour = parseInt(endTime.split(':')[0]);
+        if (endHour >= startHour) {
+            return endHour - startHour;
+        } else {
+            return (24 - startHour) + endHour;
+        }
+    };
+    const workingHours = getWorkingHours();
+
+    // Dynamic Network Occupancy (based on sum of client counts / max capacity of 30 ads)
+    const totalActiveAds = Object.values(clientCounts).reduce((sum, val) => sum + val, 0);
+    const maxCapacity = 30; // Maximum number of active ads supported by loop slots
+    const occupancy = Math.min(100, Math.round((totalActiveAds / maxCapacity) * 100));
+
     // Calculator calculations
-    const baseMonthlyRevenue = packages.reduce((sum, pkg) => {
+    const totalMonthlyRevenue = packages.reduce((sum, pkg) => {
         const count = clientCounts[pkg.id] || 0;
         return sum + (pkg.price * count);
     }, 0);
-
-    // Apply network occupancy and working hours multipliers
-    const totalMonthlyRevenue = baseMonthlyRevenue * (occupancy / 100) * (workingHours / 24);
 
     const totalYearlyRevenue = totalMonthlyRevenue * 12;
     const netProfitMonthly = Math.max(0, totalMonthlyRevenue - expenses);
@@ -378,43 +392,40 @@ export const LandingPage: React.FC = () => {
                                 </div>
 
                                 <div className="pt-6 border-t border-slate-800 space-y-6">
-                                    {/* Работно време */}
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between items-center">
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Работно Време (часови дневно)</label>
-                                            <span className="font-mono font-bold text-indigo-400 text-sm">{workingHours} часа</span>
+                                    {/* Поставки за Работно Време */}
+                                    <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-900/50 space-y-4">
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Работно Време на Билбордите</label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <span className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Почеток</span>
+                                                <select
+                                                    value={startTime}
+                                                    onChange={(e) => setStartTime(e.target.value)}
+                                                    className="w-full bg-slate-900 border border-slate-850 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-white font-mono"
+                                                >
+                                                    {Array.from({ length: 24 }, (_, i) => {
+                                                        const hr = i.toString().padStart(2, '0');
+                                                        return <option key={hr} value={`${hr}:00`}>{hr}:00</option>;
+                                                    })}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <span className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Крај</span>
+                                                <select
+                                                    value={endTime}
+                                                    onChange={(e) => setEndTime(e.target.value)}
+                                                    className="w-full bg-slate-900 border border-slate-850 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-white font-mono"
+                                                >
+                                                    {Array.from({ length: 24 }, (_, i) => {
+                                                        const hr = i.toString().padStart(2, '0');
+                                                        return <option key={hr} value={`${hr}:00`}>{hr}:00</option>;
+                                                    })}
+                                                </select>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-4">
-                                            <input
-                                                type="range"
-                                                min="1"
-                                                max="24"
-                                                step="1"
-                                                value={workingHours}
-                                                onChange={(e) => setWorkingHours(Number(e.target.value))}
-                                                className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                                            />
-                                            <span className="w-10 text-right font-bold text-white text-base">{workingHours}h</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Исполнетост на мрежа */}
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between items-center">
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Исполнетост на Мрежа (%)</label>
-                                            <span className="font-mono font-bold text-indigo-400 text-sm">{occupancy}%</span>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <input
-                                                type="range"
-                                                min="0"
-                                                max="100"
-                                                step="5"
-                                                value={occupancy}
-                                                onChange={(e) => setOccupancy(Number(e.target.value))}
-                                                className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                                            />
-                                            <span className="w-10 text-right font-bold text-white text-base">{occupancy}%</span>
+                                        <div className="text-xs text-indigo-400 font-semibold flex justify-between items-center bg-indigo-950/20 px-3 py-2 rounded-lg border border-indigo-900/30">
+                                            <span>Вкупно активни часови:</span>
+                                            <span className="text-white font-bold font-mono">{workingHours} часа</span>
                                         </div>
                                     </div>
 
@@ -432,16 +443,54 @@ export const LandingPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Right Column: Earnings Summary */}
-                        <div className="lg:col-span-6 flex flex-col justify-between h-full space-y-6">
-                            {/* Summary Cards */}
-                            <div className="grid sm:grid-cols-2 gap-6 h-full">
+                        {/* Right Column: Earnings Summary & Metrics */}
+                        <div className="lg:col-span-6 space-y-6 flex flex-col justify-between h-full">
+                            {/* Network Occupancy Metric Card */}
+                            <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-3xl shadow-xl space-y-6">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Исполнетост на Мрежа</span>
+                                        <span className="text-sm text-slate-500 font-semibold">Пресметана динамички од активни реклами</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-3xl font-black text-indigo-400 font-mono">{occupancy}%</span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-900">
+                                        <div 
+                                            className={`h-full rounded-full transition-all duration-350 ${
+                                                occupancy > 80 ? 'bg-gradient-to-r from-rose-500 to-red-400' :
+                                                occupancy > 50 ? 'bg-gradient-to-r from-amber-500 to-yellow-400' :
+                                                'bg-gradient-to-r from-emerald-500 to-teal-400'
+                                            }`}
+                                            style={{ width: `${occupancy}%` }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-between text-xs font-semibold text-slate-400">
+                                        <span>Активни реклами: <strong className="text-white font-mono">{totalActiveAds}</strong> / {maxCapacity}</span>
+                                        <span>Состојба: <strong className={
+                                            occupancy > 85 ? 'text-red-400' :
+                                            occupancy > 50 ? 'text-yellow-400' :
+                                            'text-emerald-400'
+                                        }>{
+                                            occupancy > 85 ? 'Речиси полна' :
+                                            occupancy > 50 ? 'Оптимална' :
+                                            'Слободна'
+                                        }</strong></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Summary Cards Grid */}
+                            <div className="grid sm:grid-cols-2 gap-6">
                                 <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-3xl shadow-xl flex flex-col justify-between">
                                     <div>
                                         <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Вкупен Месечен Приход</span>
                                         <div className="text-4xl font-black text-white mt-2">€{Math.round(totalMonthlyRevenue).toLocaleString()}</div>
                                     </div>
-                                    <span className="text-sm text-indigo-400 font-semibold block mt-4 border-t border-slate-800/50 pt-3">€{Math.round(totalYearlyRevenue).toLocaleString()} / годишно</span>
+                                    <span className="text-sm text-indigo-400 font-semibold block mt-6 border-t border-slate-850 pt-4">€{Math.round(totalYearlyRevenue).toLocaleString()} / годишно</span>
                                 </div>
 
                                 <div className="bg-gradient-to-br from-indigo-900/80 to-purple-900/80 border border-indigo-500/20 p-8 rounded-3xl shadow-2xl flex flex-col justify-between">
