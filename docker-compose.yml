@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: bilbordi_backend
+    volumes:
+      - backend-storage:/var/www/storage
+      - backend-database:/var/www/database
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: bilbordi_frontend
+    ports:
+      - "8090:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend-storage:
+  backend-database:
