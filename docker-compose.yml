@@ -17,7 +17,7 @@ services:
       dockerfile: Dockerfile
     container_name: bilbordi_frontend
     ports:
-      - "8090:80"
+      - "8095:80"
     depends_on:
       - backend
     restart: unless-stopped
