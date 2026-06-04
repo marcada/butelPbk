@@ -277,8 +277,8 @@ export const LandingPage: React.FC = () => {
                             Паметни Дигитални Билборди
                         </span>
                     </h1>
-                    <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed">
-                        Револуционерна DOOH платформа која ги поврзува физичките билборди со локалните бизниси преку автоматска купување, 3D симулација во реално време и паметен систем за распределба на профитот.
+                    <p className="text-lg md:text-xl text-slate-400 max-w-3xl mx-auto font-medium leading-relaxed">
+                        Модерна мрежа од паметни ЛЕД екрани низ градот — <strong>DOOH (Digital Out-of-Home / Дигитално надворешно рекламирање)</strong> — која им овозможува на локалните бизниси сами да ги поставуваат своите реклами во реално време, а на инвеститорите во живо да ја следат работата на мрежата и автоматската поделба на профитот.
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
                         <a href="#simulation" className="w-full sm:w-auto bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold px-8 py-4 rounded-xl shadow-lg shadow-indigo-500/25 transition-all hover:scale-[1.02]">
