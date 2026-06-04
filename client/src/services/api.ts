@@ -2,8 +2,13 @@ import axios from 'axios';
 import type { Ad, Display } from '../types';
 import { format } from 'date-fns';
 
-export const SERVER_URL = (import.meta.env.VITE_API_URL as string)?.replace(/\/api\/?$/, '') || 'http://localhost:8000';
-export const API_BASE_URL = `${SERVER_URL}/api`;
+const viteApiUrl = import.meta.env.VITE_API_URL as string;
+
+export const API_BASE_URL = (viteApiUrl && viteApiUrl.startsWith('/'))
+    ? (typeof window !== 'undefined' ? `${window.location.origin}${viteApiUrl}` : '/api')
+    : (viteApiUrl || 'http://localhost:8000/api');
+
+export const SERVER_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 const client = axios.create({
     baseURL: API_BASE_URL,
