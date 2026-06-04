@@ -4,7 +4,7 @@ import { Scene } from '../components/Scene';
 import { TimeControls } from '../components/TimeControls';
 import { api } from '../services/api';
 import { 
-    TrendingUp, Wallet, Users, BarChart2, Lock, Unlock 
+    TrendingUp, Wallet, Users, BarChart2, Lock, Unlock, Layers 
 } from 'lucide-react';
 import type { Package } from '../types';
 
@@ -23,8 +23,10 @@ export const LandingPage: React.FC = () => {
     const [packages, setPackages] = useState<Package[]>([]);
     const [clientCounts, setClientCounts] = useState<Record<number, number>>({});
     const [expenses, setExpenses] = useState<number>(3000); // Default expenses
-    const [startTime, setStartTime] = useState<string>('06:00'); // Default start time
-    const [endTime, setEndTime] = useState<string>('22:00'); // Default end time
+    const [weekdayStart, setWeekdayStart] = useState<string>('07:00'); // Default start time
+    const [weekdayEnd, setWeekdayEnd] = useState<string>('01:00'); // Default end time
+    const [weekendStart, setWeekendStart] = useState<string>('07:00'); // Default start time
+    const [weekendEnd, setWeekendEnd] = useState<string>('03:00'); // Default end time
     const [shareholders, setShareholders] = useState<Shareholder[]>([
         { id: 1, name: 'MARCADA', percentage: 60, locked: false },
         { id: 2, name: 'Investitor', percentage: 20, locked: false },
@@ -70,21 +72,41 @@ export const LandingPage: React.FC = () => {
     }, []);
 
     // Dynamic Working Hours Calculation
-    const getWorkingHours = () => {
-        const startHour = parseInt(startTime.split(':')[0]);
-        const endHour = parseInt(endTime.split(':')[0]);
-        if (endHour >= startHour) {
+    const getHoursDiff = (start: string, end: string) => {
+        const startHour = parseInt(start.split(':')[0]);
+        const endHour = parseInt(end.split(':')[0]);
+        if (endHour > startHour) {
             return endHour - startHour;
-        } else {
+        } else if (endHour < startHour) {
             return (24 - startHour) + endHour;
+        } else {
+            return 24; // If start and end are equal, represent a full 24h cycle
         }
     };
-    const workingHours = getWorkingHours();
 
-    // Dynamic Network Occupancy (based on sum of client counts / max capacity of 30 ads)
-    const totalActiveAds = Object.values(clientCounts).reduce((sum, val) => sum + val, 0);
-    const maxCapacity = 30; // Maximum number of active ads supported by loop slots
-    const occupancy = Math.min(100, Math.round((totalActiveAds / maxCapacity) * 100));
+    const weekdayHours = getHoursDiff(weekdayStart, weekdayEnd);
+    const weekendHours = getHoursDiff(weekendStart, weekendEnd);
+
+    // Dynamic Network Occupancy (based on shows per day vs max possible showings in working hours)
+    // All billboards show the same ads synchronously, so capacity is computed on a single loop.
+    // Each slot duration is 20s.
+    const maxSpotsWeekday = Math.floor((weekdayHours * 3600) / 20);
+    const maxSpotsWeekend = Math.floor((weekendHours * 3600) / 20);
+
+    const soldShowings = packages.reduce((sum, pkg) => {
+        const count = clientCounts[pkg.id] || 0;
+        return sum + (count * pkg.shows_per_day);
+    }, 0);
+
+    const occupancyWeekday = maxSpotsWeekday > 0 ? Math.min(100, Math.round((soldShowings / maxSpotsWeekday) * 100)) : 0;
+    const occupancyWeekend = maxSpotsWeekend > 0 ? Math.min(100, Math.round((soldShowings / maxSpotsWeekend) * 100)) : 0;
+
+    // Use weekday occupancy as primary/overall indicator since it's the tighter limit (18h vs 20h)
+    const occupancy = Math.max(occupancyWeekday, occupancyWeekend);
+    const totalActiveClients = Object.values(clientCounts).reduce((sum, val) => sum + val, 0);
+
+    const minAllowedMaxSpots = Math.min(maxSpotsWeekday, maxSpotsWeekend);
+    const isLimitReached = soldShowings >= minAllowedMaxSpots;
 
     // Calculator calculations
     const totalMonthlyRevenue = packages.reduce((sum, pkg) => {
@@ -97,7 +119,37 @@ export const LandingPage: React.FC = () => {
     const netProfitYearly = netProfitMonthly * 12;
 
     const handleClientChange = (pkgId: number, value: number) => {
-        setClientCounts(prev => ({ ...prev, [pkgId]: value }));
+        setClientCounts(prev => {
+            const currentVal = prev[pkgId] || 0;
+            if (value <= currentVal) {
+                return { ...prev, [pkgId]: value };
+            }
+
+            // Calculate target showings
+            const targetCounts = { ...prev, [pkgId]: value };
+            const targetSold = packages.reduce((sum, pkg) => {
+                const count = targetCounts[pkg.id] || 0;
+                return sum + (count * pkg.shows_per_day);
+            }, 0);
+
+            if (targetSold > minAllowedMaxSpots) {
+                // Find capacity left by other packages
+                const otherSold = packages.reduce((sum, pkg) => {
+                    if (pkg.id === pkgId) return sum;
+                    const count = prev[pkg.id] || 0;
+                    return sum + (count * pkg.shows_per_day);
+                }, 0);
+
+                const targetPkg = packages.find(p => p.id === pkgId);
+                if (!targetPkg) return prev;
+
+                const maxClients = Math.floor((minAllowedMaxSpots - otherSold) / targetPkg.shows_per_day);
+                const safeValue = Math.max(currentVal, maxClients);
+                return { ...prev, [pkgId]: safeValue };
+            }
+
+            return targetCounts;
+        });
     };
 
     const handleShareholderPctChange = (id: number, value: number) => {
@@ -200,6 +252,7 @@ export const LandingPage: React.FC = () => {
                     <div className="flex items-center gap-8 text-sm font-semibold text-slate-400">
                         <a href="#about" className="hover:text-white transition-colors">За Проектот</a>
                         <a href="#simulation" className="hover:text-white transition-colors">Симулација</a>
+                        <a href="#packages" className="hover:text-white transition-colors">Пакети</a>
                         <a href="#calculator" className="hover:text-white transition-colors">Калкулатор</a>
                         <a href="#profit" className="hover:text-white transition-colors">Профит</a>
                         <a href="/blog" className="text-indigo-400 hover:text-indigo-300 transition-colors bg-indigo-950/30 border border-indigo-900/50 px-4 py-2 rounded-full">
@@ -342,6 +395,95 @@ export const LandingPage: React.FC = () => {
                 </div>
             </section>
 
+            {/* Packages Presentation Section */}
+            {packages.length > 0 && (
+                <section id="packages" className="py-24 max-w-7xl mx-auto px-6 border-t border-slate-900">
+                    <div className="text-center mb-16 space-y-4">
+                        <div className="inline-flex items-center gap-2 bg-indigo-950/50 border border-indigo-900/50 px-4 py-1.5 rounded-full text-xs font-bold text-indigo-400 uppercase tracking-wider">
+                            <Layers className="w-3.5 h-3.5" /> Маркетинг Понуда
+                        </div>
+                        <h2 className="text-3xl md:text-4xl font-extrabold text-white">Рекламни Пакети во Нашата Мрежа</h2>
+                        <p className="text-slate-400 max-w-2xl mx-auto">
+                            Изберете го идеалниот пакет за вашиот бизнис. Сите реклами се емитуваат синхронизирано на целата мрежа на паметни билборди.
+                        </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-8">
+                        {packages.map((pkg) => {
+                            const freqText = pkg.name === 'Basic' ? '48 минути' : pkg.name === 'Pro' ? '24 минути' : '12 минути';
+                            return (
+                                <div 
+                                    key={pkg.id} 
+                                    className="bg-slate-900/40 border border-slate-900 hover:border-slate-800/80 rounded-3xl p-8 relative overflow-hidden group flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-indigo-950/5"
+                                >
+                                    <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10" style={{ backgroundColor: pkg.color }} />
+                                    
+                                    <div className="space-y-6">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full text-slate-100" style={{ backgroundColor: `${pkg.color}20`, color: pkg.color, border: `1px solid ${pkg.color}30` }}>
+                                                    {pkg.name}
+                                                </span>
+                                                <h3 className="text-2xl font-black text-white mt-4">€{pkg.price} <span className="text-sm font-semibold text-slate-500">/ месечно</span></h3>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4 border-t border-slate-850/60 pt-6">
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-slate-400">Прикажувања дневно:</span>
+                                                <span className="font-bold text-white font-mono">{pkg.shows_per_day} пати</span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-slate-400">Времетраење на спот:</span>
+                                                <span className="font-bold text-white font-mono">{pkg.duration} секунди</span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-slate-400">Фреквенција на појавување:</span>
+                                                <span className="font-bold text-indigo-400">секои {freqText}*</span>
+                                            </div>
+                                        </div>
+
+                                        <ul className="space-y-3 pt-4 text-xs font-medium text-slate-400">
+                                            <li className="flex items-center gap-2">
+                                                <span className="text-emerald-500 text-base">✓</span> Синхронизирано емитување на сите локации
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <span className="text-emerald-500 text-base">✓</span> Автоматско емитување во живо
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <span className="text-emerald-500 text-base">✓</span> Месечен извештај за импресии
+                                            </li>
+                                            {pkg.name !== 'Basic' && (
+                                                <li className="flex items-center gap-2">
+                                                    <span className="text-emerald-500 text-base">✓</span> Приоритетна поддршка и промена на креатива
+                                                </li>
+                                            )}
+                                            {pkg.name === 'Enterprise' && (
+                                                <li className="flex items-center gap-2">
+                                                    <span className="text-emerald-500 text-base">✓</span> 24/7 VIP поддршка и аналитика во живо
+                                                </li>
+                                            )}
+                                        </ul>
+                                    </div>
+
+                                    <div className="mt-8 pt-4 border-t border-slate-850/40">
+                                        <a 
+                                            href="#calculator" 
+                                            className="block text-center w-full py-3 rounded-xl border border-slate-800 hover:border-indigo-500/50 text-xs font-bold text-slate-300 hover:text-white transition-all bg-slate-950/40 hover:bg-indigo-950/20"
+                                        >
+                                            Симулирај со {pkg.name}
+                                        </a>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    <div className="mt-8 text-center text-xs text-slate-500">
+                        *Фреквенцијата е пресметана врз основа на стандардно 16-часовно работно време на билбордите.
+                    </div>
+                </section>
+            )}
+
             {/* Revenue Calculator Section */}
             <section id="calculator" className="py-24 max-w-7xl mx-auto px-6 border-t border-slate-900">
                 <div className="text-center mb-16 space-y-4">
@@ -352,7 +494,90 @@ export const LandingPage: React.FC = () => {
                 {calcLoading ? (
                     <div className="text-center text-slate-500 py-10">Се вчитаат податоците за пакетите...</div>
                 ) : (
-                    <div className="grid lg:grid-cols-12 gap-8 items-start">
+                    <div className="space-y-8">
+                        {/* Working Hours Bar (Row before card) */}
+                        <div className="bg-slate-900/40 border border-slate-900/60 p-6 rounded-3xl grid md:grid-cols-2 gap-8 items-center">
+                            {/* Column 1: Weekday */}
+                            <div className="space-y-3">
+                                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                                    📅 Работни денови (Понеделник - Петок)
+                                </h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <span className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Почеток</span>
+                                        <select
+                                            value={weekdayStart}
+                                            onChange={(e) => setWeekdayStart(e.target.value)}
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-white font-mono"
+                                        >
+                                            {Array.from({ length: 24 }, (_, i) => {
+                                                const hr = i.toString().padStart(2, '0');
+                                                return <option key={hr} value={`${hr}:00`}>{hr}:00</option>;
+                                            })}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <span className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Крај</span>
+                                        <select
+                                            value={weekdayEnd}
+                                            onChange={(e) => setWeekdayEnd(e.target.value)}
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-white font-mono"
+                                        >
+                                            {Array.from({ length: 24 }, (_, i) => {
+                                                const hr = i.toString().padStart(2, '0');
+                                                return <option key={hr} value={`${hr}:00`}>{hr}:00</option>;
+                                            })}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="text-xs text-indigo-400 font-semibold flex justify-between items-center bg-indigo-950/20 px-3 py-1.5 rounded-lg border border-indigo-900/30">
+                                    <span>Работни часови:</span>
+                                    <span className="text-white font-bold font-mono">{weekdayHours} часа ({maxSpotsWeekday} слота)</span>
+                                </div>
+                            </div>
+
+                            {/* Column 2: Weekend */}
+                            <div className="space-y-3">
+                                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                                    🎉 Викенди (Сабота - Недела)
+                                </h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <span className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Почеток</span>
+                                        <select
+                                            value={weekendStart}
+                                            onChange={(e) => setWeekendStart(e.target.value)}
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-white font-mono"
+                                        >
+                                            {Array.from({ length: 24 }, (_, i) => {
+                                                const hr = i.toString().padStart(2, '0');
+                                                return <option key={hr} value={`${hr}:00`}>{hr}:00</option>;
+                                            })}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <span className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Крај</span>
+                                        <select
+                                            value={weekendEnd}
+                                            onChange={(e) => setWeekendEnd(e.target.value)}
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-white font-mono"
+                                        >
+                                            {Array.from({ length: 24 }, (_, i) => {
+                                                const hr = i.toString().padStart(2, '0');
+                                                return <option key={hr} value={`${hr}:00`}>{hr}:00</option>;
+                                            })}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="text-xs text-purple-400 font-semibold flex justify-between items-center bg-purple-950/20 px-3 py-1.5 rounded-lg border border-purple-900/30">
+                                    <span>Работни часови:</span>
+                                    <span className="text-white font-bold font-mono">{weekendHours} часа ({maxSpotsWeekend} слота)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Grid for Sliders and Summary */}
+                        <div className="grid lg:grid-cols-12 gap-8 items-start">
                         {/* Left Column: Input Sliders */}
                         <div className="lg:col-span-6 space-y-6">
                             <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-8 space-y-8">
@@ -367,7 +592,9 @@ export const LandingPage: React.FC = () => {
                                             <div className="flex justify-between items-center">
                                                 <div className="flex items-center gap-2">
                                                     <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pkg.color }} />
-                                                    <span className="font-bold text-white text-base">{pkg.name} Пакет</span>
+                                                    <span className="font-bold text-white text-base">
+                                                        {pkg.name} Пакет <span className="text-xs font-medium text-slate-500">({pkg.shows_per_day} прик./ден)</span>
+                                                    </span>
                                                 </div>
                                                 <span className="text-sm font-semibold text-indigo-400">
                                                     €{pkg.price} / месечно
@@ -392,42 +619,6 @@ export const LandingPage: React.FC = () => {
                                 </div>
 
                                 <div className="pt-6 border-t border-slate-800 space-y-6">
-                                    {/* Поставки за Работно Време */}
-                                    <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-900/50 space-y-4">
-                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Работно Време на Билбордите</label>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <span className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Почеток</span>
-                                                <select
-                                                    value={startTime}
-                                                    onChange={(e) => setStartTime(e.target.value)}
-                                                    className="w-full bg-slate-900 border border-slate-850 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-white font-mono"
-                                                >
-                                                    {Array.from({ length: 24 }, (_, i) => {
-                                                        const hr = i.toString().padStart(2, '0');
-                                                        return <option key={hr} value={`${hr}:00`}>{hr}:00</option>;
-                                                    })}
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <span className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Крај</span>
-                                                <select
-                                                    value={endTime}
-                                                    onChange={(e) => setEndTime(e.target.value)}
-                                                    className="w-full bg-slate-900 border border-slate-850 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-white font-mono"
-                                                >
-                                                    {Array.from({ length: 24 }, (_, i) => {
-                                                        const hr = i.toString().padStart(2, '0');
-                                                        return <option key={hr} value={`${hr}:00`}>{hr}:00</option>;
-                                                    })}
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div className="text-xs text-indigo-400 font-semibold flex justify-between items-center bg-indigo-950/20 px-3 py-2 rounded-lg border border-indigo-900/30">
-                                            <span>Вкупно активни часови:</span>
-                                            <span className="text-white font-bold font-mono">{workingHours} часа</span>
-                                        </div>
-                                    </div>
 
                                     {/* Месечни Оперативни Расходи */}
                                     <div>
@@ -457,7 +648,7 @@ export const LandingPage: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
+                                <div className="space-y-4">
                                     <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-900">
                                         <div 
                                             className={`h-full rounded-full transition-all duration-350 ${
@@ -468,17 +659,40 @@ export const LandingPage: React.FC = () => {
                                             style={{ width: `${occupancy}%` }}
                                         />
                                     </div>
-                                    <div className="flex justify-between text-xs font-semibold text-slate-400">
-                                        <span>Активни реклами: <strong className="text-white font-mono">{totalActiveAds}</strong> / {maxCapacity}</span>
-                                        <span>Состојба: <strong className={
-                                            occupancy > 85 ? 'text-red-400' :
-                                            occupancy > 50 ? 'text-yellow-400' :
-                                            'text-emerald-400'
-                                        }>{
-                                            occupancy > 85 ? 'Речиси полна' :
-                                            occupancy > 50 ? 'Оптимална' :
-                                            'Слободна'
-                                        }</strong></span>
+
+                                    {isLimitReached && (
+                                        <div className="text-rose-500 font-black text-xs animate-pulse tracking-widest text-center py-2.5 bg-rose-950/20 border border-rose-900/30 rounded-xl uppercase">
+                                            ⚠️ ДОСТИГНАТ МАКСИМАЛЕН КАПАЦИТЕТ НА МРЕЖАТА!
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-2.5 pt-2 border-t border-slate-900/50 text-xs font-semibold text-slate-400">
+                                        <div className="flex justify-between">
+                                            <span>Активни претплатници:</span>
+                                            <strong className="text-white font-mono">{totalActiveClients}</strong>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Продадени прикажувања дневно:</span>
+                                            <strong className="text-white font-mono">{soldShowings} пати</strong>
+                                        </div>
+                                        <div className="flex justify-between text-[11px] text-slate-500">
+                                            <span>Максимум во работни денови:</span>
+                                            <strong className="font-mono">{maxSpotsWeekday} слота ({weekdayHours}ч.)</strong>
+                                        </div>
+                                        <div className="flex justify-between text-[11px] text-slate-500">
+                                            <span>Максимум за викенди:</span>
+                                            <strong className="font-mono">{maxSpotsWeekend} слота ({weekendHours}ч.)</strong>
+                                        </div>
+                                        <div className="flex justify-between items-center pt-2 border-t border-slate-900/50">
+                                            <span>Состојба на мрежата:</span>
+                                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                                occupancy > 85 ? 'bg-rose-950 text-rose-400 border border-rose-900/30' :
+                                                occupancy > 50 ? 'bg-amber-950 text-amber-400 border border-amber-900/30' :
+                                                'bg-emerald-950 text-emerald-400 border border-emerald-900/30'
+                                            }`}>
+                                                {occupancy > 85 ? 'Речиси полна' : occupancy > 50 ? 'Оптимална' : 'Слободна'}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -503,7 +717,24 @@ export const LandingPage: React.FC = () => {
                             </div>
                         </div>
                     </div>
+                    </div>
                 )}
+
+                {/* Zonal Division Scaling Strategy Alert */}
+                <div className="mt-12 bg-gradient-to-r from-indigo-950/40 via-slate-900/60 to-purple-950/40 border border-indigo-900/40 p-8 rounded-3xl shadow-xl flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+                    <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+                        <TrendingUp className="w-7 h-7 text-indigo-400" />
+                    </div>
+                    <div className="space-y-2">
+                        <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                            🚀 Стратегија за Идно Скалирање: Поделба на Географски Зони
+                        </h4>
+                        <p className="text-slate-400 text-sm leading-relaxed">
+                            Кога ќе го постигнеме максималниот капацитет на мрежата (исполнетост од 100%), нашиот систем автоматски се реструктуира со <strong>поделба по географски зони</strong>. Наместо сите билборди да ја прикажуваат истата реклама синхронизирано, билбордите ќе се поделат во посебни регионални зони. Ова ни овозможува да добиеме дополнителни независни временски периоди и мултиплициран рекламен простор за нови клиенти. Ова веднаш го мултиплицира капацитетот на рекламен простор за N пати (каде N е бројот на зони), со што остваруваме дополнителни приходоносни слотови без потреба од нови инвестиции во хардвер.
+                        </p>
+                    </div>
+                </div>
             </section>
 
             {/* Profit Sharing Section */}
