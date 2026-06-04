@@ -21,6 +21,9 @@ RUN composer config audit.block-insecure false \
 # Copy code
 COPY . .
 
+# Backup storage folder to bypass volume mount overlay
+RUN cp -r storage storage_backup
+
 # Run composer autoloader and clean up permissions
 RUN composer dump-autoload --no-dev --optimize \
     && chmod +x docker-entrypoint.sh

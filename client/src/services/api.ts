@@ -2,12 +2,17 @@ import axios from 'axios';
 import type { Ad, Display } from '../types';
 import { format } from 'date-fns';
 
-const viteApiUrl = import.meta.env.VITE_API_URL as string;
+// Fully dynamic runtime URL resolution to prevent build-time static stripping
+let apiUrl = 'http://localhost:8000/api';
 
-export const API_BASE_URL = (viteApiUrl && viteApiUrl.startsWith('/'))
-    ? (typeof window !== 'undefined' ? `${window.location.origin}${viteApiUrl}` : '/api')
-    : (viteApiUrl || 'http://localhost:8000/api');
+if (typeof window !== 'undefined') {
+    // If the port is not our local Vite dev server port (5177), and we are not on localhost/127.0.0.1, use dynamic origin
+    if (window.location.port !== '5177' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        apiUrl = `${window.location.origin}/api`;
+    }
+}
 
+export const API_BASE_URL = apiUrl;
 export const SERVER_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 const client = axios.create({
