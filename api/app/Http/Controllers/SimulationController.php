@@ -31,8 +31,8 @@ class SimulationController extends Controller
             $time = \Carbon\Carbon::parse($request->input('timestamp', '12:00:00'));
             $secondsSinceMidnight = $time->secondsSinceMidnight();
 
-            // 20 second duration
-            $duration = 20;
+            // 5 second duration
+            $duration = 5;
             $slotIndex = floor($secondsSinceMidnight / $duration);
 
             // Cycle through ads
@@ -84,10 +84,10 @@ class SimulationController extends Controller
             ]);
         }
 
-        // Calculate time slot for deterministic rotation (20 seconds per ad)
+        // Calculate time slot for deterministic rotation (5 seconds per ad)
         $time = \Carbon\Carbon::parse($timeStr);
         $secondsSinceMidnight = $time->secondsSinceMidnight();
-        $duration = 20;
+        $duration = 5;
         $slotIndex = floor($secondsSinceMidnight / $duration);
 
         // Cycle through campaigns

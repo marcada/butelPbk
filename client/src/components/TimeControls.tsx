@@ -65,7 +65,7 @@ export const TimeControls: React.FC = () => {
     // Update fetch only when the "20s slot" changes?
     // Calculated from currentTime.
 
-    const timeSlot = Math.floor(currentTime.getTime() / 20000); // Change every 20s
+    const timeSlot = Math.floor(currentTime.getTime() / 5000); // Change every 5s
 
     useEffect(() => {
         const fetchAd = async () => {

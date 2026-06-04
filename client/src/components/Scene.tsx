@@ -47,7 +47,7 @@ export const Scene: React.FC = () => {
                     <img
                         alt="City Street"
                         className="w-full h-full object-fill opacity-100"
-                        src="http://127.0.0.1:8000/city_bg.png"
+                        src="http://localhost:8000/city_bg.png"
                     />
                 </div>
                 {/* Dark overlay for better visibility */}
@@ -71,7 +71,7 @@ export const Scene: React.FC = () => {
                                 activeAd.type === 'image' || activeAd.billboard_image_path ? (
                                     <img
                                         src={activeAd.billboard_image_path
-                                            ? (activeAd.billboard_image_path.startsWith('http') ? activeAd.billboard_image_path : `http://127.0.0.1:8000${activeAd.billboard_image_path}`)
+                                            ? (activeAd.billboard_image_path.startsWith('http') ? activeAd.billboard_image_path : `http://localhost:8000${activeAd.billboard_image_path}`)
                                             : activeAd.content_path}
                                         alt={activeAd.name}
                                         className="w-full h-full object-cover"

@@ -171,28 +171,52 @@ class DemoSeeder extends Seeder
             'contact_phone' => '075987654',
         ]);
 
-        // 7. Create Advertisements
+        // 7. Create Advertisements (Root Assets)
         Advertisement::create([
-            'client_name' => 'Restoran Gino',
-            'title' => 'Вкусен Италијански Руче во Gino',
+            'client_name' => 'Coca Cola',
+            'title' => 'Coca Cola - Секогаш свежа енергија',
             'type_carousel' => true,
             'type_sidebar' => true,
             'type_billboard' => true,
-            'carousel_image_path' => '/storage/content/ad1.jpg',
-            'sidebar_image_path' => '/storage/content/ad1.jpg',
-            'billboard_image_path' => '/storage/content/ad1.jpg',
+            'carousel_image_path' => '/storage/content/coca_cola.jpg',
+            'sidebar_image_path' => '/storage/content/coca_cola.jpg',
+            'billboard_image_path' => '/storage/content/coca_cola.jpg',
             'business_id' => $bizGino->id
         ]);
 
         Advertisement::create([
-            'client_name' => 'Spa Center Ohrid',
-            'title' => 'Опуштете се со 50% попуст во недела',
+            'client_name' => 'Кожувчанка',
+            'title' => 'Кожувчанка - Природна изворска вода',
             'type_carousel' => true,
             'type_sidebar' => true,
             'type_billboard' => true,
-            'carousel_image_path' => '/storage/content/ad2.png',
-            'sidebar_image_path' => '/storage/content/ad2.png',
-            'billboard_image_path' => '/storage/content/ad2.png',
+            'carousel_image_path' => '/storage/content/kozuvcanka.jpg',
+            'sidebar_image_path' => '/storage/content/kozuvcanka.jpg',
+            'billboard_image_path' => '/storage/content/kozuvcanka.jpg',
+            'business_id' => $bizSpa->id
+        ]);
+
+        Advertisement::create([
+            'client_name' => 'Скопско',
+            'title' => 'Скопско - Наше најдобро пиво',
+            'type_carousel' => true,
+            'type_sidebar' => true,
+            'type_billboard' => true,
+            'carousel_image_path' => '/storage/content/skopsko.jpg',
+            'sidebar_image_path' => '/storage/content/skopsko.jpg',
+            'billboard_image_path' => '/storage/content/skopsko.jpg',
+            'business_id' => $bizGino->id
+        ]);
+
+        Advertisement::create([
+            'client_name' => 'ВМРО',
+            'title' => 'ВМРО-ДПМНЕ - Промени во живо',
+            'type_carousel' => true,
+            'type_sidebar' => true,
+            'type_billboard' => true,
+            'carousel_image_path' => '/storage/content/vmro.jpeg',
+            'sidebar_image_path' => '/storage/content/vmro.jpeg',
+            'billboard_image_path' => '/storage/content/vmro.jpeg',
             'business_id' => $bizSpa->id
         ]);
 

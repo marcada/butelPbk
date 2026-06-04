@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSimulationStore } from '../store/simulationStore';
 import { Scene } from '../components/Scene';
 import { TimeControls } from '../components/TimeControls';
+import { api } from '../services/api';
 import { 
     Upload, TrendingUp, Wallet, Users, 
     CheckCircle, AlertTriangle, Loader2, BarChart2 
@@ -36,12 +37,22 @@ export const LandingPage: React.FC = () => {
     const [uploadSuccess, setUploadSuccess] = useState(false);
     const [uploadError, setUploadError] = useState('');
 
-    // Fetch packages for calculator
+    // Fetch packages and initialize displays for simulation
     useEffect(() => {
         // Auto-play simulation on mount so billboard is active immediately
         if (!isPlaying) {
             togglePlay();
         }
+
+        // Fetch displays to initialize billboard simulation
+        api.init()
+            .then(data => {
+                // Access setFiles directly from state or use store function
+                useSimulationStore.getState().setFiles(data.displays);
+            })
+            .catch(err => {
+                console.error("Failed to fetch displays", err);
+            });
 
         fetch('http://localhost:8000/api/packages')
             .then(res => res.json())
