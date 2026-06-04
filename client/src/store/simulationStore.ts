@@ -4,8 +4,8 @@ import { addMilliseconds } from 'date-fns';
 
 export const useSimulationStore = create<SimulationState>((set) => ({
     currentTime: new Date(new Date().setHours(7, 30, 0, 0)), // Start at 07:30
-    isPlaying: false,
-    playbackSpeed: 1,
+    isPlaying: true,
+    playbackSpeed: 10,
     displays: [],
     activeAd: null,
 

@@ -17,7 +17,7 @@ interface Shareholder {
 
 export const LandingPage: React.FC = () => {
     // Simulation store connection
-    const { isPlaying, togglePlay, currentTime, activeAd } = useSimulationStore();
+    const { currentTime, activeAd } = useSimulationStore();
 
     // 1. Calculator states
     const [packages, setPackages] = useState<Package[]>([]);
@@ -39,9 +39,12 @@ export const LandingPage: React.FC = () => {
 
     // Fetch packages and initialize displays for simulation
     useEffect(() => {
-        // Auto-play simulation on mount so billboard is active immediately
-        if (!isPlaying) {
-            togglePlay();
+        // Reset simulation parameters to defaults on mount/refresh
+        const store = useSimulationStore.getState();
+        store.setTime(new Date(new Date().setHours(7, 30, 0, 0))); // Reset back to 07:30:00
+        store.setSpeed(10); // Run at 10x speed by default
+        if (!store.isPlaying) {
+            store.togglePlay(); // Ensure it starts playing automatically
         }
 
         // Fetch displays to initialize billboard simulation
