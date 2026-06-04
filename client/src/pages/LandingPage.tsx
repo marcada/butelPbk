@@ -4,7 +4,8 @@ import { Scene } from '../components/Scene';
 import { TimeControls } from '../components/TimeControls';
 import { api } from '../services/api';
 import { 
-    TrendingUp, Wallet, Users, BarChart2, Lock, Unlock, Layers 
+    TrendingUp, Wallet, Users, BarChart2, Lock, Unlock, Layers,
+    Clock, ShieldAlert, CheckCircle2, XCircle
 } from 'lucide-react';
 import type { Package } from '../types';
 
@@ -34,6 +35,36 @@ export const LandingPage: React.FC = () => {
     ]);
     const [calcLoading, setCalcLoading] = useState(true);
 
+    // Scroll state for background animations
+    const [scrollY, setScrollY] = useState(0);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrollY(window.scrollY);
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    // Intersection Observer for scroll reveal animations
+    useEffect(() => {
+        if (calcLoading) return;
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                }
+            });
+        }, { threshold: 0.05 });
+
+        const reveals = document.querySelectorAll('.reveal');
+        reveals.forEach(el => observer.observe(el));
+
+        return () => {
+            reveals.forEach(el => observer.unobserve(el));
+        };
+    }, [packages, calcLoading]);
+
     // Fetch packages and initialize displays for simulation
     useEffect(() => {
         // Reset simulation parameters to defaults on mount/refresh
@@ -47,7 +78,6 @@ export const LandingPage: React.FC = () => {
         // Fetch displays to initialize billboard simulation
         api.init()
             .then(data => {
-                // Access setFiles directly from state or use store function
                 useSimulationStore.getState().setFiles(data.displays);
             })
             .catch(err => {
@@ -87,9 +117,7 @@ export const LandingPage: React.FC = () => {
     const weekdayHours = getHoursDiff(weekdayStart, weekdayEnd);
     const weekendHours = getHoursDiff(weekendStart, weekendEnd);
 
-    // Dynamic Network Occupancy (based on shows per day vs max possible showings in working hours)
-    // All billboards show the same ads synchronously, so capacity is computed on a single loop.
-    // Each slot duration is 20s.
+    // Dynamic Network Occupancy
     const maxSpotsWeekday = Math.floor((weekdayHours * 3600) / 20);
     const maxSpotsWeekend = Math.floor((weekendHours * 3600) / 20);
 
@@ -101,7 +129,6 @@ export const LandingPage: React.FC = () => {
     const occupancyWeekday = maxSpotsWeekday > 0 ? Math.min(100, Math.round((soldShowings / maxSpotsWeekday) * 100)) : 0;
     const occupancyWeekend = maxSpotsWeekend > 0 ? Math.min(100, Math.round((soldShowings / maxSpotsWeekend) * 100)) : 0;
 
-    // Use weekday occupancy as primary/overall indicator since it's the tighter limit (18h vs 20h)
     const occupancy = Math.max(occupancyWeekday, occupancyWeekend);
     const totalActiveClients = Object.values(clientCounts).reduce((sum, val) => sum + val, 0);
 
@@ -233,29 +260,66 @@ export const LandingPage: React.FC = () => {
         setShareholders(prev => prev.map(s => s.id === id ? { ...s, locked: !s.locked } : s));
     };
 
-
-
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white overflow-x-hidden">
+        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white overflow-x-hidden relative">
             
+            {/* 1. Global Floating Background Shapes */}
+            <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+                <div className="absolute inset-0 cyber-grid opacity-30" />
+                <div className="absolute inset-0 cyber-grid-dense opacity-20" />
+                
+                {/* Parallax drifting glows */}
+                <div 
+                    className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-indigo-500/10 blur-[120px] animate-pulse-soft"
+                    style={{ transform: `translate3d(0, ${scrollY * 0.15}px, 0)` }}
+                />
+                <div 
+                    className="absolute top-[35%] right-[-10%] w-[45vw] h-[45vw] rounded-full bg-purple-500/10 blur-[130px] animate-float-slow"
+                    style={{ transform: `translate3d(0, ${-scrollY * 0.08}px, 0)` }}
+                />
+                <div 
+                    className="absolute bottom-[-10%] left-[10%] w-[40vw] h-[40vw] rounded-full bg-pink-500/5 blur-[110px] animate-float-reverse"
+                    style={{ transform: `translate3d(0, ${scrollY * 0.05}px, 0)` }}
+                />
+            </div>
+
             {/* Header / Navbar */}
-            <nav className="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+            <nav className="border-b border-slate-900/60 bg-slate-950/70 backdrop-blur-xl sticky top-0 z-50 transition-all duration-300">
                 <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                            <TrendingUp className="w-5 h-5 text-white" />
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-gradient-to-tr from-purple-600 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <TrendingUp className="w-5 h-5 text-white relative z-10 animate-pulse" />
                         </div>
-                        <span className="text-xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">
-                            DOOH SMART
-                        </span>
+                        <div className="flex flex-col">
+                            <span className="text-lg font-black tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-250 to-slate-400">
+                                DOOH SMART
+                            </span>
+                            <span className="text-[9px] text-indigo-400 tracking-widest font-black uppercase">Билборди</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-8 text-sm font-semibold text-slate-400">
-                        <a href="#about" className="hover:text-white transition-colors">За Проектот</a>
-                        <a href="#simulation" className="hover:text-white transition-colors">Симулација</a>
-                        <a href="#packages" className="hover:text-white transition-colors">Пакети</a>
-                        <a href="#calculator" className="hover:text-white transition-colors">Калкулатор</a>
-                        <a href="#profit" className="hover:text-white transition-colors">Профит</a>
-                        <a href="/blog" className="text-indigo-400 hover:text-indigo-300 transition-colors bg-indigo-950/30 border border-indigo-900/50 px-4 py-2 rounded-full">
+                    <div className="hidden md:flex items-center gap-8 text-sm font-bold text-slate-450">
+                        <a href="#about" className="hover:text-white transition-colors duration-200 relative group py-2">
+                            За Проектот
+                            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-indigo-500 transition-all duration-300 group-hover:w-full" />
+                        </a>
+                        <a href="#simulation" className="hover:text-white transition-colors duration-200 relative group py-2">
+                            Симулација
+                            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-indigo-500 transition-all duration-300 group-hover:w-full" />
+                        </a>
+                        <a href="#packages" className="hover:text-white transition-colors duration-200 relative group py-2">
+                            Пакети
+                            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-indigo-500 transition-all duration-300 group-hover:w-full" />
+                        </a>
+                        <a href="#calculator" className="hover:text-white transition-colors duration-200 relative group py-2">
+                            Калкулатор
+                            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-indigo-500 transition-all duration-300 group-hover:w-full" />
+                        </a>
+                        <a href="#profit" className="hover:text-white transition-colors duration-200 relative group py-2">
+                            Профит
+                            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-indigo-500 transition-all duration-300 group-hover:w-full" />
+                        </a>
+                        <a href="/blog" className="text-indigo-400 hover:text-white transition-all duration-300 bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-900/50 px-5 py-2 rounded-full shadow-lg shadow-indigo-950/50 hover:shadow-indigo-500/10">
                             Градски Блог
                         </a>
                     </div>
@@ -263,101 +327,111 @@ export const LandingPage: React.FC = () => {
             </nav>
 
             {/* Hero Section */}
-            <section className="relative py-24 md:py-32 flex flex-col items-center justify-center text-center px-6 overflow-hidden">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
-                <div className="absolute top-40 left-1/3 w-[300px] h-[300px] bg-purple-500/10 rounded-full blur-[100px] pointer-events-none" />
-                
+            <section className="relative pt-24 pb-20 md:pt-32 md:pb-28 flex flex-col items-center justify-center text-center px-6 overflow-hidden">
                 <div className="max-w-4xl mx-auto space-y-8 relative z-10">
-                    <div className="inline-flex items-center gap-2 bg-indigo-950/50 border border-indigo-900/50 px-4 py-1.5 rounded-full text-xs font-bold text-indigo-400 uppercase tracking-wider">
-                        ✨ Иднина на Надворешно Рекламирање
+                    <div className="inline-flex items-center gap-2 bg-indigo-950/60 border border-indigo-800/40 px-4.5 py-2 rounded-full text-xs font-bold text-indigo-300 uppercase tracking-wider shadow-lg shadow-indigo-950/50">
+                        <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+                        ✨ Дигитално Надворешно Рекламирање (DOOH)
                     </div>
-                    <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none text-white">
+                    <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-tight text-white reveal reveal-scale">
                         Автоматизирана Мрежа на <br />
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 drop-shadow-[0_2px_15px_rgba(99,102,241,0.2)]">
                             Паметни Дигитални Билборди
                         </span>
                     </h1>
-                    <p className="text-lg md:text-xl text-slate-400 max-w-3xl mx-auto font-medium leading-relaxed">
-                        Модерна мрежа од паметни ЛЕД екрани низ градот — <strong>DOOH (Digital Out-of-Home / Дигитално надворешно рекламирање)</strong> — која им овозможува на локалните бизниси сами да ги поставуваат своите реклами во реално време, а на инвеститорите во живо да ја следат работата на мрежата и автоматската поделба на профитот.
+                    <p className="text-lg md:text-xl text-slate-400 max-w-3xl mx-auto font-medium leading-relaxed reveal reveal-scale reveal-delay-100">
+                        Револуционерна <strong>DOOH (Digital Out-of-Home / Дигитално надворешно рекламирање)</strong> платформа која ги поврзува физичките билборди со локалните бизниси преку автоматско купување, 3D симулација во реално време и паметен систем за распределба на профитот. Модерни паметни ЛЕД екрани низ градот кои овозможуваат таргетирано емитување и инстант реклами.
                     </p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-                        <a href="#simulation" className="w-full sm:w-auto bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold px-8 py-4 rounded-xl shadow-lg shadow-indigo-500/25 transition-all hover:scale-[1.02]">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-5 pt-4 reveal reveal-scale reveal-delay-200">
+                        <a href="#simulation" className="w-full sm:w-auto bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold px-8 py-4 rounded-xl shadow-lg shadow-indigo-500/25 transition-all hover:scale-[1.03] active:scale-[0.98]">
                             Почни Симулација во Живо
                         </a>
-                        <a href="#calculator" className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white border border-slate-800 font-bold px-8 py-4 rounded-xl transition-all hover:scale-[1.02]">
+                        <a href="#calculator" className="w-full sm:w-auto bg-slate-900/80 hover:bg-slate-800 text-white border border-slate-800/80 font-bold px-8 py-4 rounded-xl transition-all hover:scale-[1.03] active:scale-[0.98] shadow-lg">
                             Пресметај Заработка
                         </a>
                     </div>
                 </div>
             </section>
 
-            {/* Problem & Solution Section (Што е проблемот, што нудиме) */}
-            <section id="about" className="py-24 max-w-7xl mx-auto px-6 border-t border-slate-900">
-                <div className="text-center mb-16 space-y-4">
-                    <h2 className="text-3xl md:text-4xl font-extrabold text-white">Проблемот и Нашето Решение</h2>
-                    <p className="text-slate-400 max-w-2xl mx-auto">Како го трансформираме застарениот пазар за надворешен маркетинг.</p>
+            {/* Problem & Solution Section */}
+            <section id="about" className="py-24 max-w-7xl mx-auto px-6 border-t border-slate-900/60 relative z-10">
+                <div className="text-center mb-20 space-y-4 reveal reveal-scale">
+                    <h2 className="text-3xl md:text-5xl font-black text-white">Проблемот и Нашето Решение</h2>
+                    <p className="text-slate-400 max-w-2xl mx-auto text-base font-semibold">Како го трансформираме застарениот пазар за надворешен маркетинг преку автоматизација и дигитализација.</p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="grid md:grid-cols-2 gap-10">
                     {/* The Problem */}
-                    <div className="bg-slate-900/40 border border-slate-900 rounded-3xl p-8 md:p-12 relative overflow-hidden group">
+                    <div className="premium-card premium-card-danger rounded-3xl p-8 md:p-12 relative overflow-hidden group reveal reveal-left">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full blur-3xl" />
-                        <h3 className="text-2xl font-bold text-rose-400 mb-6 flex items-center gap-3">
-                            <span className="w-2 h-8 bg-rose-500 rounded-full" />
+                        <h3 className="text-2xl font-black text-rose-400 mb-8 flex items-center gap-3">
+                            <span className="w-2.5 h-8 bg-rose-500 rounded-full shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
                             Проблемот со класичните реклами
                         </h3>
-                        <ul className="space-y-6 text-slate-300 font-medium">
+                        <ul className="space-y-8 text-slate-300 font-medium">
                             <li className="flex gap-4">
-                                <span className="text-rose-500 text-lg font-bold">✕</span>
+                                <div className="w-6 h-6 rounded-full bg-rose-950/60 border border-rose-900/40 flex items-center justify-center shrink-0">
+                                    <XCircle className="w-4 h-4 text-rose-500" />
+                                </div>
                                 <div>
-                                    <h4 className="font-bold text-white mb-1">Скапо и Бавно поставување</h4>
-                                    <p className="text-sm text-slate-400">Печатење, лепење и замена на рекламите на билбордите бара денови и високи логистички трошоци.</p>
+                                    <h4 className="font-bold text-white mb-1.5 text-base">Скапо и Бавно поставување</h4>
+                                    <p className="text-sm text-slate-400 leading-relaxed">Печатење, лепење и замена на плакати бара денови и високи логистички/физички трошоци.</p>
                                 </div>
                             </li>
                             <li className="flex gap-4">
-                                <span className="text-rose-500 text-lg font-bold">✕</span>
+                                <div className="w-6 h-6 rounded-full bg-rose-950/60 border border-rose-900/40 flex items-center justify-center shrink-0">
+                                    <XCircle className="w-4 h-4 text-rose-500" />
+                                </div>
                                 <div>
-                                    <h4 className="font-bold text-white mb-1">Нема временско таргетирање</h4>
-                                    <p className="text-sm text-slate-400">Рекламите стојат исти без разлика дали е 8 наутро во густ сообраќај или 3 часот по полноќ.</p>
+                                    <h4 className="font-bold text-white mb-1.5 text-base">Нема временско таргетирање</h4>
+                                    <p className="text-sm text-slate-400 leading-relaxed">Рекламите стојат непроменети со недели, без разлика дали е раздвижен утрински шпиц или 3 часот по полноќ.</p>
                                 </div>
                             </li>
                             <li className="flex gap-4">
-                                <span className="text-rose-500 text-lg font-bold">✕</span>
+                                <div className="w-6 h-6 rounded-full bg-rose-950/60 border border-rose-900/40 flex items-center justify-center shrink-0">
+                                    <XCircle className="w-4 h-4 text-rose-500" />
+                                </div>
                                 <div>
-                                    <h4 className="font-bold text-white mb-1">Непристапно за локалните бизниси</h4>
-                                    <p className="text-sm text-slate-400">Агенциите бараат договори на долг рок, правејќи го надворешниот маркетинг прескап за малите локали.</p>
+                                    <h4 className="font-bold text-white mb-1.5 text-base">Непристапно за локалните бизниси</h4>
+                                    <p className="text-sm text-slate-400 leading-relaxed">Агенциите бараат големи договори на долг рок, правејќи го надворешниот маркетинг недостижен за малите локали.</p>
                                 </div>
                             </li>
                         </ul>
                     </div>
 
                     {/* Our Solution */}
-                    <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-8 md:p-12 relative overflow-hidden group shadow-xl shadow-indigo-950/10">
+                    <div className="premium-card premium-card-success rounded-3xl p-8 md:p-12 relative overflow-hidden group reveal reveal-right">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl" />
-                        <h3 className="text-2xl font-bold text-emerald-400 mb-6 flex items-center gap-3">
-                            <span className="w-2 h-8 bg-emerald-500 rounded-full" />
+                        <h3 className="text-2xl font-black text-emerald-400 mb-8 flex items-center gap-3">
+                            <span className="w-2.5 h-8 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                             Паметната DOOH Алтернатива
                         </h3>
-                        <ul className="space-y-6 text-slate-300 font-medium">
+                        <ul className="space-y-8 text-slate-300 font-medium">
                             <li className="flex gap-4">
-                                <span className="text-emerald-500 text-lg font-bold">✓</span>
+                                <div className="w-6 h-6 rounded-full bg-emerald-950/60 border border-emerald-900/40 flex items-center justify-center shrink-0">
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                </div>
                                 <div>
-                                    <h4 className="font-bold text-white mb-1">Инстантна промена во реално време</h4>
-                                    <p className="text-sm text-slate-400">Дигиталните ЛЕД екрани овозможуваат веднаш да ја прикачите и промените вашата реклама преку веб.</p>
+                                    <h4 className="font-bold text-white mb-1.5 text-base">Инстантна промена во реално време</h4>
+                                    <p className="text-sm text-slate-400 leading-relaxed">Дигиталните ЛЕД екрани овозможуваат веднаш да ја прикачите и промените вашата реклама преку веб.</p>
                                 </div>
                             </li>
                             <li className="flex gap-4">
-                                <span className="text-emerald-500 text-lg font-bold">✓</span>
+                                <div className="w-6 h-6 rounded-full bg-emerald-950/60 border border-emerald-900/40 flex items-center justify-center shrink-0">
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                </div>
                                 <div>
-                                    <h4 className="font-bold text-white mb-1">Динамичко временско таргетирање</h4>
-                                    <p className="text-sm text-slate-400">Автоматско менување на рекламите во клучните делови од денот кога фреквенцијата на вашата целна публика е најголема.</p>
+                                    <h4 className="font-bold text-white mb-1.5 text-base">Динамичко временско таргетирање</h4>
+                                    <p className="text-sm text-slate-400 leading-relaxed">Автоматско менување на рекламите во клучните делови од денот кога фреквенцијата на целната публика е најголема.</p>
                                 </div>
                             </li>
                             <li className="flex gap-4">
-                                <span className="text-emerald-500 text-lg font-bold">✓</span>
+                                <div className="w-6 h-6 rounded-full bg-emerald-950/60 border border-emerald-900/40 flex items-center justify-center shrink-0">
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                </div>
                                 <div>
-                                    <h4 className="font-bold text-white mb-1">Целосно отворен и достапен систем</h4>
-                                    <p className="text-sm text-slate-400">Бизнисите купуваат флексибилни пакети согласно нивниот буџет и имаат целосна self-service контрола.</p>
+                                    <h4 className="font-bold text-white mb-1.5 text-base">Целосно отворен и достапен систем</h4>
+                                    <p className="text-sm text-slate-400 leading-relaxed">Бизнисите купуваат флексибилни пакети согласно нивниот буџет и имаат целосна self-service контрола.</p>
                                 </div>
                             </li>
                         </ul>
@@ -365,31 +439,65 @@ export const LandingPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* Live Billboard Simulation */}
-            <section id="simulation" className="py-24 max-w-7xl mx-auto px-6 border-t border-slate-900">
-                <div className="text-center mb-16 space-y-4">
-                    <h2 className="text-3xl md:text-4xl font-extrabold text-white">Интерактивна Симулација на Билборди во Градот</h2>
-                    <p className="text-slate-400 max-w-2xl mx-auto">Погледнете ја ротацијата на нашите реклами на билбордите низ градот во реално време.</p>
+            {/* Live Billboard Simulation Section */}
+            <section id="simulation" className="py-24 max-w-7xl mx-auto px-6 border-t border-slate-900/60 relative z-10">
+                <div className="text-center mb-16 space-y-4 reveal reveal-scale">
+                    <h2 className="text-3xl md:text-5xl font-black text-white">Интерактивен Контролен Панел</h2>
+                    <p className="text-slate-400 max-w-2xl mx-auto text-base">Следете ја работата и емитувањето на рекламите на билбордите низ градот во реално време.</p>
                 </div>
 
-                <div className="max-w-5xl mx-auto space-y-6">
-                    {/* Aspect-ratio locked 3D simulation */}
-                    <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden aspect-[5376/3072] w-full relative shadow-2xl">
-                        <Scene />
-                    </div>
-                    {/* Playback indicator & details */}
-                    <div className="bg-slate-900/50 border border-slate-900/60 p-5 rounded-2xl flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-4">
+                <div className="max-w-5xl mx-auto space-y-6 reveal reveal-scale">
+                    {/* Futuristic Dashboard Frame */}
+                    <div className="premium-card rounded-3xl overflow-hidden border border-slate-800 shadow-2xl relative">
+                        {/* Top Bar of the Console */}
+                        <div className="bg-slate-950/80 px-6 py-4 flex items-center justify-between border-b border-slate-900">
                             <div className="flex items-center gap-2">
-                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="font-bold uppercase tracking-wider text-xs text-slate-400">Симулатор Термин:</span>
+                                <span className="w-3 h-3 rounded-full bg-rose-500/80" />
+                                <span className="w-3 h-3 rounded-full bg-amber-500/80" />
+                                <span className="w-3 h-3 rounded-full bg-emerald-500/80" />
+                                <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest ml-4">System Core: live_viewport_3D</span>
                             </div>
-                            <span className="font-mono text-white text-base font-semibold">
-                                {currentTime ? currentTime.toLocaleTimeString() : '00:00:00'}
-                            </span>
+                            <div className="flex items-center gap-3">
+                                <span className="px-2.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-900/50 text-[10px] font-mono font-bold text-emerald-400 animate-pulse">
+                                    ONLINE
+                                </span>
+                            </div>
                         </div>
-                        <div className="text-slate-400 text-xs font-semibold">
-                            Активна Реклама: <span className="text-indigo-400 font-bold">{activeAd ? activeAd.name : 'Нема'}</span>
+                        
+                        {/* 3D Scene Viewport */}
+                        <div className="aspect-[5376/3072] w-full relative bg-slate-950">
+                            <Scene />
+                        </div>
+
+                        {/* Bottom Status Information */}
+                        <div className="bg-slate-950/90 border-t border-slate-900 p-6 grid md:grid-cols-3 gap-6 items-center">
+                            <div className="flex items-center gap-4">
+                                <div className="w-11 h-11 rounded-xl bg-indigo-950/50 border border-indigo-900/40 flex items-center justify-center shrink-0">
+                                    <Clock className="w-5.5 h-5.5 text-indigo-400" />
+                                </div>
+                                <div>
+                                    <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Време во Симулацијата</span>
+                                    <span className="font-mono text-white text-base font-extrabold neon-glow-indigo">
+                                        {currentTime ? currentTime.toLocaleTimeString() : '00:00:00'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                <div className="w-11 h-11 rounded-xl bg-emerald-950/50 border border-emerald-900/40 flex items-center justify-center shrink-0">
+                                    <Layers className="w-5.5 h-5.5 text-emerald-400" />
+                                </div>
+                                <div>
+                                    <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Активен Рекламен Спот</span>
+                                    <span className="font-bold text-emerald-400 text-sm block truncate max-w-[200px]">
+                                        {activeAd ? activeAd.name : 'Иницијализација...'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-3 text-right">
+                                <span className="text-[10px] text-slate-500 font-mono font-bold">FPS: 60 | ENGINE: WEBGL2</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -397,118 +505,130 @@ export const LandingPage: React.FC = () => {
 
             {/* Packages Presentation Section */}
             {packages.length > 0 && (
-                <section id="packages" className="py-24 max-w-7xl mx-auto px-6 border-t border-slate-900">
-                    <div className="text-center mb-16 space-y-4">
-                        <div className="inline-flex items-center gap-2 bg-indigo-950/50 border border-indigo-900/50 px-4 py-1.5 rounded-full text-xs font-bold text-indigo-400 uppercase tracking-wider">
-                            <Layers className="w-3.5 h-3.5" /> Маркетинг Понуда
+                <section id="packages" className="py-24 max-w-7xl mx-auto px-6 border-t border-slate-900/60 relative z-10">
+                    <div className="text-center mb-20 space-y-4 reveal reveal-scale">
+                        <div className="inline-flex items-center gap-2 bg-indigo-950/50 border border-indigo-900/50 px-4 py-1.5 rounded-full text-xs font-bold text-indigo-450 uppercase tracking-wider">
+                            <Layers className="w-3.5 h-3.5 text-indigo-450" /> Маркетинг Понуда
                         </div>
-                        <h2 className="text-3xl md:text-4xl font-extrabold text-white">Рекламни Пакети во Нашата Мрежа</h2>
-                        <p className="text-slate-400 max-w-2xl mx-auto">
-                            Изберете го идеалниот пакет за вашиот бизнис. Сите реклами се емитуваат синхронизирано на целата мрежа на паметни билборди.
+                        <h2 className="text-3xl md:text-5xl font-black text-white">Флексибилни Рекламни Пакети</h2>
+                        <p className="text-slate-400 max-w-2xl mx-auto text-base">
+                            Изберете ја фреквенцијата која одговара на вашите цели. Рекламите се емитуваат синхронизирано низ целата дигитална мрежа.
                         </p>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-8">
-                        {packages.map((pkg) => {
+                        {packages.map((pkg, idx) => {
                             const freqText = pkg.name === 'Basic' ? '48 минути' : pkg.name === 'Pro' ? '24 минути' : '12 минути';
                             return (
                                 <div 
                                     key={pkg.id} 
-                                    className="bg-slate-900/40 border border-slate-900 hover:border-slate-800/80 rounded-3xl p-8 relative overflow-hidden group flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-indigo-950/5"
+                                    className="premium-card rounded-3xl p-8 relative overflow-hidden group flex flex-col justify-between reveal reveal-scale"
+                                    style={{ transitionDelay: `${idx * 100}ms` }}
                                 >
-                                    <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10" style={{ backgroundColor: pkg.color }} />
+                                    {/* Radial glow based on color */}
+                                    <div 
+                                        className="absolute -top-10 -right-10 w-36 h-36 rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity duration-555 pointer-events-none" 
+                                        style={{ backgroundColor: pkg.color }}
+                                    />
                                     
                                     <div className="space-y-6">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full text-slate-100" style={{ backgroundColor: `${pkg.color}20`, color: pkg.color, border: `1px solid ${pkg.color}30` }}>
-                                                    {pkg.name}
-                                                </span>
-                                                <h3 className="text-2xl font-black text-white mt-4">€{pkg.price} <span className="text-sm font-semibold text-slate-500">/ месечно</span></h3>
+                                        <div>
+                                            <span 
+                                                className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full" 
+                                                style={{ backgroundColor: `${pkg.color}15`, color: pkg.color, border: `1px solid ${pkg.color}30` }}
+                                            >
+                                                {pkg.name} ПАКЕТ
+                                            </span>
+                                            <div className="mt-5 flex items-baseline">
+                                                <span className="text-4xl font-black text-white">€{pkg.price}</span>
+                                                <span className="text-sm font-bold text-slate-500 ml-2">/ месечно</span>
                                             </div>
                                         </div>
 
-                                        <div className="space-y-4 border-t border-slate-850/60 pt-6">
+                                        <div className="space-y-4 border-t border-slate-900/60 pt-6">
                                             <div className="flex items-center justify-between text-sm">
-                                                <span className="text-slate-400">Прикажувања дневно:</span>
-                                                <span className="font-bold text-white font-mono">{pkg.shows_per_day} пати</span>
+                                                <span className="text-slate-450 font-semibold">Дневни Емитувања:</span>
+                                                <span className="font-extrabold text-white font-mono">{pkg.shows_per_day} пати</span>
                                             </div>
                                             <div className="flex items-center justify-between text-sm">
-                                                <span className="text-slate-400">Времетраење на спот:</span>
-                                                <span className="font-bold text-white font-mono">{pkg.duration} секунди</span>
+                                                <span className="text-slate-455 font-semibold">Времетраење на спот:</span>
+                                                <span className="font-extrabold text-white font-mono">{pkg.duration} сек.</span>
                                             </div>
                                             <div className="flex items-center justify-between text-sm">
-                                                <span className="text-slate-400">Фреквенција на појавување:</span>
-                                                <span className="font-bold text-indigo-400">секои {freqText}*</span>
+                                                <span className="text-slate-450 font-semibold">Фреквенција на појавување:</span>
+                                                <span className="font-extrabold text-indigo-400">секои {freqText}*</span>
                                             </div>
                                         </div>
 
-                                        <ul className="space-y-3 pt-4 text-xs font-medium text-slate-400">
+                                        <ul className="space-y-3.5 pt-4 text-xs font-semibold text-slate-400">
                                             <li className="flex items-center gap-2">
-                                                <span className="text-emerald-500 text-base">✓</span> Синхронизирано емитување на сите локации
+                                                <span className="text-emerald-500 text-sm">✓</span> Синхронизирано на сите локации
                                             </li>
                                             <li className="flex items-center gap-2">
-                                                <span className="text-emerald-500 text-base">✓</span> Автоматско емитување во живо
+                                                <span className="text-emerald-500 text-sm">✓</span> Автоматско емитување во живо
                                             </li>
                                             <li className="flex items-center gap-2">
-                                                <span className="text-emerald-500 text-base">✓</span> Месечен извештај за импресии
+                                                <span className="text-emerald-500 text-sm">✓</span> Детален извештај за импресии
                                             </li>
                                             {pkg.name !== 'Basic' && (
                                                 <li className="flex items-center gap-2">
-                                                    <span className="text-emerald-500 text-base">✓</span> Приоритетна поддршка и промена на креатива
+                                                    <span className="text-emerald-500 text-sm">✓</span> Брза промена на видео креатива
                                                 </li>
                                             )}
                                             {pkg.name === 'Enterprise' && (
                                                 <li className="flex items-center gap-2">
-                                                    <span className="text-emerald-500 text-base">✓</span> 24/7 VIP поддршка и аналитика во живо
+                                                    <span className="text-emerald-500 text-sm">✓</span> Приоритетна поддршка 24/7
                                                 </li>
                                             )}
                                         </ul>
                                     </div>
 
-                                    <div className="mt-8 pt-4 border-t border-slate-850/40">
+                                    <div className="mt-8 pt-4 border-t border-slate-900/60">
                                         <a 
                                             href="#calculator" 
-                                            className="block text-center w-full py-3 rounded-xl border border-slate-800 hover:border-indigo-500/50 text-xs font-bold text-slate-300 hover:text-white transition-all bg-slate-950/40 hover:bg-indigo-950/20"
+                                            className="block text-center w-full py-3.5 rounded-xl border border-slate-800 hover:border-indigo-500/50 text-xs font-black uppercase tracking-wider text-slate-350 hover:text-white transition-all bg-slate-950/40 hover:bg-indigo-950/20"
                                         >
-                                            Симулирај со {pkg.name}
+                                            Избери во Калкулатор
                                         </a>
                                     </div>
                                 </div>
                             );
                         })}
                     </div>
-                    <div className="mt-8 text-center text-xs text-slate-500">
-                        *Фреквенцијата е пресметана врз основа на стандардно 16-часовно работно време на билбордите.
+                    <div className="mt-8 text-center text-xs text-slate-500 font-semibold">
+                        * Пресметаната фреквенција на појавување зависи од прилагоденото работно време во калкулаторот подолу.
                     </div>
                 </section>
             )}
 
             {/* Revenue Calculator Section */}
-            <section id="calculator" className="py-24 max-w-7xl mx-auto px-6 border-t border-slate-900">
-                <div className="text-center mb-16 space-y-4">
-                    <h2 className="text-3xl md:text-4xl font-extrabold text-white">Калкулатор на Приходи за Инвеститори</h2>
-                    <p className="text-slate-400 max-w-2xl mx-auto">Прилагодете ги параметрите на активни клиенти и пресметајте ја проценката за заработка и профит од мрежата.</p>
+            <section id="calculator" className="py-24 max-w-7xl mx-auto px-6 border-t border-slate-900/60 relative z-10">
+                <div className="text-center mb-16 space-y-4 reveal reveal-scale">
+                    <h2 className="text-3xl md:text-5xl font-black text-white">Симулатор за Приходи и Оптимизација</h2>
+                    <p className="text-slate-400 max-w-2xl mx-auto text-base font-semibold">Прилагодете ги параметрите на активни клиенти за да ја симулирате исполнетоста и заработката.</p>
                 </div>
 
                 {calcLoading ? (
-                    <div className="text-center text-slate-500 py-10">Се вчитаат податоците за пакетите...</div>
+                    <div className="text-center text-slate-500 py-10 font-bold">Се вчитаат податоците за калкулаторот...</div>
                 ) : (
                     <div className="space-y-8">
-                        {/* Working Hours Bar (Row before card) */}
-                        <div className="bg-slate-900/40 border border-slate-900/60 p-6 rounded-3xl grid md:grid-cols-2 gap-8 items-center">
+                        {/* Dynamic Time controls - Row before the main card */}
+                        <div className="premium-card rounded-3xl p-6 md:p-8 grid md:grid-cols-2 gap-8 items-center reveal reveal-scale">
                             {/* Column 1: Weekday */}
-                            <div className="space-y-3">
-                                <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                                    📅 Работни денови (Понеделник - Петок)
-                                </h4>
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2.5">
+                                    <Clock className="w-5 h-5 text-indigo-400" />
+                                    <h4 className="text-base font-extrabold text-white">
+                                        Работни Денови (Понеделник - Петок)
+                                    </h4>
+                                </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <span className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Почеток</span>
+                                        <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Вклучување</span>
                                         <select
                                             value={weekdayStart}
                                             onChange={(e) => setWeekdayStart(e.target.value)}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-white font-mono"
+                                            className="w-full bg-slate-950 border border-slate-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-white font-mono font-bold"
                                         >
                                             {Array.from({ length: 24 }, (_, i) => {
                                                 const hr = i.toString().padStart(2, '0');
@@ -517,11 +637,11 @@ export const LandingPage: React.FC = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <span className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Крај</span>
+                                        <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Исклучување</span>
                                         <select
                                             value={weekdayEnd}
                                             onChange={(e) => setWeekdayEnd(e.target.value)}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-white font-mono"
+                                            className="w-full bg-slate-950 border border-slate-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-white font-mono font-bold"
                                         >
                                             {Array.from({ length: 24 }, (_, i) => {
                                                 const hr = i.toString().padStart(2, '0');
@@ -530,24 +650,27 @@ export const LandingPage: React.FC = () => {
                                         </select>
                                     </div>
                                 </div>
-                                <div className="text-xs text-indigo-400 font-semibold flex justify-between items-center bg-indigo-950/20 px-3 py-1.5 rounded-lg border border-indigo-900/30">
-                                    <span>Работни часови:</span>
-                                    <span className="text-white font-bold font-mono">{weekdayHours} часа ({maxSpotsWeekday} слота)</span>
+                                <div className="text-xs text-indigo-300 font-bold flex justify-between items-center bg-indigo-950/20 px-4 py-2.5 rounded-xl border border-indigo-900/30">
+                                    <span>Активни часови на ротација:</span>
+                                    <span className="text-white font-black font-mono">{weekdayHours} часа ({maxSpotsWeekday} слота)</span>
                                 </div>
                             </div>
 
                             {/* Column 2: Weekend */}
-                            <div className="space-y-3">
-                                <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                                    🎉 Викенди (Сабота - Недела)
-                                </h4>
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2.5">
+                                    <Clock className="w-5 h-5 text-purple-400" />
+                                    <h4 className="text-base font-extrabold text-white">
+                                        Викенди (Сабота - Недела)
+                                    </h4>
+                                </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <span className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Почеток</span>
+                                        <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Вклучување</span>
                                         <select
                                             value={weekendStart}
                                             onChange={(e) => setWeekendStart(e.target.value)}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-white font-mono"
+                                            className="w-full bg-slate-950 border border-slate-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-white font-mono font-bold"
                                         >
                                             {Array.from({ length: 24 }, (_, i) => {
                                                 const hr = i.toString().padStart(2, '0');
@@ -556,11 +679,11 @@ export const LandingPage: React.FC = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <span className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Крај</span>
+                                        <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Исклучување</span>
                                         <select
                                             value={weekendEnd}
                                             onChange={(e) => setWeekendEnd(e.target.value)}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-white font-mono"
+                                            className="w-full bg-slate-950 border border-slate-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-white font-mono font-bold"
                                         >
                                             {Array.from({ length: 24 }, (_, i) => {
                                                 const hr = i.toString().padStart(2, '0');
@@ -569,206 +692,217 @@ export const LandingPage: React.FC = () => {
                                         </select>
                                     </div>
                                 </div>
-                                <div className="text-xs text-purple-400 font-semibold flex justify-between items-center bg-purple-950/20 px-3 py-1.5 rounded-lg border border-purple-900/30">
-                                    <span>Работни часови:</span>
-                                    <span className="text-white font-bold font-mono">{weekendHours} часа ({maxSpotsWeekend} слота)</span>
+                                <div className="text-xs text-purple-300 font-bold flex justify-between items-center bg-purple-950/20 px-4 py-2.5 rounded-xl border border-purple-900/30">
+                                    <span>Активни часови на ротација:</span>
+                                    <span className="text-white font-black font-mono">{weekendHours} часа ({maxSpotsWeekend} слота)</span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Grid for Sliders and Summary */}
+                        {/* Main Interactive Grid */}
                         <div className="grid lg:grid-cols-12 gap-8 items-start">
-                        {/* Left Column: Input Sliders */}
-                        <div className="lg:col-span-6 space-y-6">
-                            <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-8 space-y-8">
-                                <h3 className="text-lg font-bold text-white border-b border-slate-800 pb-4 flex items-center gap-2">
-                                    <BarChart2 className="w-5 h-5 text-indigo-400" />
-                                    Конфигурација на претплатници
-                                </h3>
+                            
+                            {/* Left Side: Client configuration sliders */}
+                            <div className="lg:col-span-6 space-y-6 reveal reveal-left">
+                                <div className="premium-card rounded-3xl p-8 space-y-8 shadow-xl">
+                                    <h3 className="text-lg font-black text-white border-b border-slate-900 pb-4 flex items-center gap-2.5">
+                                        <BarChart2 className="w-5 h-5 text-indigo-400" />
+                                        Конфигурација на клиенти во мрежата
+                                    </h3>
 
-                                <div className="space-y-8">
-                                    {packages.map(pkg => (
-                                        <div key={pkg.id} className="space-y-3">
-                                            <div className="flex justify-between items-center">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pkg.color }} />
-                                                    <span className="font-bold text-white text-base">
-                                                        {pkg.name} Пакет <span className="text-xs font-medium text-slate-500">({pkg.shows_per_day} прик./ден)</span>
+                                    <div className="space-y-6.5">
+                                        {packages.map(pkg => (
+                                            <div key={pkg.id} className="space-y-3 bg-slate-950/20 p-5 rounded-2xl border border-slate-900/50">
+                                                <div className="flex justify-between items-center">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pkg.color }} />
+                                                        <span className="font-extrabold text-white text-base">
+                                                            {pkg.name} Пакет
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-sm font-semibold text-slate-400">
+                                                        €{pkg.price} / мес.
                                                     </span>
                                                 </div>
-                                                <span className="text-sm font-semibold text-indigo-400">
-                                                    €{pkg.price} / месечно
-                                                </span>
+                                                
+                                                <div className="flex items-center gap-5">
+                                                    <input
+                                                        type="range"
+                                                        min="0"
+                                                        max="50"
+                                                        step="1"
+                                                        value={clientCounts[pkg.id] || 0}
+                                                        onChange={(e) => handleClientChange(pkg.id, Number(e.target.value))}
+                                                        className="flex-1"
+                                                    />
+                                                    <span className="w-8 text-right font-black text-white text-lg font-mono">
+                                                        {clientCounts[pkg.id] || 0}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-4">
-                                                <input
-                                                    type="range"
-                                                    min="0"
-                                                    max="50"
-                                                    step="1"
-                                                    value={clientCounts[pkg.id] || 0}
-                                                    onChange={(e) => handleClientChange(pkg.id, Number(e.target.value))}
-                                                    className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                                                />
-                                                <span className="w-10 text-right font-bold text-white text-lg">
-                                                    {clientCounts[pkg.id] || 0}
-                                                </span>
-                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Operational Expenses */}
+                                    <div className="pt-6 border-t border-slate-900/80 space-y-4">
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                            МЕСЕЧНИ ОПЕРАТИВНИ РАСХОДИ (ВКУПНО ВО €)
+                                        </label>
+                                        <div className="relative">
+                                            <span className="absolute left-4 top-3 text-slate-505 font-bold">€</span>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-slate-950 border border-slate-900 rounded-xl pl-8 pr-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-white font-mono font-bold shadow-inner"
+                                                value={expenses}
+                                                onChange={(e) => setExpenses(Math.max(0, Number(e.target.value)))}
+                                            />
                                         </div>
-                                    ))}
-                                </div>
-
-                                <div className="pt-6 border-t border-slate-800 space-y-6">
-
-                                    {/* Месечни Оперативни Расходи */}
-                                                                    <div>
-                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Месечни Оперативни Расходи (Вкупно во €)</label>
-                                        <input
-                                            type="number"
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-white font-mono font-bold"
-                                            value={expenses}
-                                            onChange={(e) => setExpenses(Number(e.target.value))}
-                                        />
-                                        <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
-                                            * Во пресметката не се вклучени трошоците за електрична енергија и интернет (кои не можат моментално точно да се предвидат). Овде се пресметуваат само маркетинг и основни оперативни трошоци.
+                                        <p className="text-[10px] text-slate-500 leading-relaxed font-semibold">
+                                            * Напомена: Трошоците за електрична енергија и интернет не се пресметани во оваа сума бидејќи моментално не можеме прецизно да ги предвидиме. Зборуваме само за маркетинг и основни оперативни расходи.
                                         </p>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Right Column: Earnings Summary & Metrics */}
-                        <div className="lg:col-span-6 space-y-6 flex flex-col justify-between h-full">
-                            {/* Network Occupancy Metric Card */}
-                            <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-3xl shadow-xl space-y-6">
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Исполнетост на Мрежа</span>
-                                        <span className="text-sm text-slate-500 font-semibold">Пресметана динамички од активни реклами</span>
+                            {/* Right Side: Network Occupancy Gauge & Financial outputs */}
+                            <div className="lg:col-span-6 space-y-6 reveal reveal-right">
+                                
+                                {/* Capacity Indicator Card */}
+                                <div className="premium-card rounded-3xl p-8 shadow-xl space-y-6">
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Капацитет и Исполнетост</span>
+                                            <span className="text-xs text-slate-505 font-semibold">Искористеност на расположливите рекламни слотови</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-3xl font-black text-indigo-400 font-mono neon-glow-indigo">{occupancy}%</span>
+                                        </div>
                                     </div>
-                                    <div className="text-right">
-                                        <span className="text-3xl font-black text-indigo-400 font-mono">{occupancy}%</span>
+
+                                    <div className="space-y-4">
+                                        <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-900 shadow-inner">
+                                            <div 
+                                                className={`h-full rounded-full transition-all duration-500 shadow-lg ${
+                                                    occupancy > 85 ? 'bg-gradient-to-r from-rose-500 to-red-400 shadow-rose-950/50' :
+                                                    occupancy > 50 ? 'bg-gradient-to-r from-amber-500 to-yellow-400 shadow-amber-950/50' :
+                                                    'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-emerald-950/50'
+                                                }`}
+                                                style={{ width: `${occupancy}%` }}
+                                            />
+                                        </div>
+
+                                        {isLimitReached && (
+                                            <div className="text-rose-500 font-black text-xs animate-pulse tracking-widest text-center py-3 bg-rose-950/20 border border-rose-900/30 rounded-xl uppercase flex items-center justify-center gap-2">
+                                                <ShieldAlert className="w-4 h-4 text-rose-500" />
+                                                ДОСТИГНАТ МАКСИМАЛЕН КАПАЦИТЕТ НА МРЕЖАТА!
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-3 pt-3 border-t border-slate-900/80 text-xs font-semibold text-slate-400">
+                                            <div className="flex justify-between">
+                                                <span>Вкупно активни клиенти:</span>
+                                                <strong className="text-white font-mono">{totalActiveClients}</strong>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Вкупен број на прикажувања дневно:</span>
+                                                <strong className="text-white font-mono">{soldShowings} пати</strong>
+                                            </div>
+                                            <div className="flex justify-between text-[11px] text-slate-500">
+                                                <span>Максимум во работни денови:</span>
+                                                <strong className="font-mono">{maxSpotsWeekday} слота ({weekdayHours}ч.)</strong>
+                                            </div>
+                                            <div className="flex justify-between text-[11px] text-slate-500">
+                                                <span>Максимум за викенди:</span>
+                                                <strong className="font-mono">{maxSpotsWeekend} слота ({weekendHours}ч.)</strong>
+                                            </div>
+                                            <div className="flex justify-between items-center pt-3 border-t border-slate-900/80">
+                                                <span>Статус на ресурси:</span>
+                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                                    occupancy > 85 ? 'bg-rose-950/80 text-rose-400 border border-rose-900/30' :
+                                                    occupancy > 50 ? 'bg-amber-950/80 text-amber-400 border border-amber-900/30' :
+                                                    'bg-emerald-950/80 text-emerald-400 border border-emerald-900/30'
+                                                }`}>
+                                                    {occupancy > 85 ? 'Речиси полна' : occupancy > 50 ? 'Оптимална' : 'Слободна'}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-900">
-                                        <div 
-                                            className={`h-full rounded-full transition-all duration-350 ${
-                                                occupancy > 80 ? 'bg-gradient-to-r from-rose-500 to-red-400' :
-                                                occupancy > 50 ? 'bg-gradient-to-r from-amber-500 to-yellow-400' :
-                                                'bg-gradient-to-r from-emerald-500 to-teal-400'
-                                            }`}
-                                            style={{ width: `${occupancy}%` }}
-                                        />
+                                {/* Financial Summaries */}
+                                <div className="grid sm:grid-cols-2 gap-6">
+                                    <div className="premium-card rounded-3xl p-8 flex flex-col justify-between shadow-xl">
+                                        <div>
+                                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Месечен Приход</span>
+                                            <div className="text-3xl font-black text-white mt-2">€{Math.round(totalMonthlyRevenue).toLocaleString()}</div>
+                                        </div>
+                                        <span className="text-xs text-indigo-400 font-bold block mt-6 border-t border-slate-900/60 pt-4 font-mono">
+                                            €{Math.round(totalYearlyRevenue).toLocaleString()} / год.
+                                        </span>
                                     </div>
 
-                                    {isLimitReached && (
-                                        <div className="text-rose-500 font-black text-xs animate-pulse tracking-widest text-center py-2.5 bg-rose-950/20 border border-rose-900/30 rounded-xl uppercase">
-                                            ⚠️ ДОСТИГНАТ МАКСИМАЛЕН КАПАЦИТЕТ НА МРЕЖАТА!
+                                    <div className="premium-card rounded-3xl p-8 flex flex-col justify-between shadow-2xl border border-indigo-500/20 bg-gradient-to-br from-slate-900/60 via-indigo-950/40 to-slate-950/40">
+                                        <div>
+                                            <span className="text-xs font-bold text-indigo-300 uppercase tracking-widest block mb-1">Нето Профит</span>
+                                            <div className="text-3xl font-black text-emerald-400 mt-2 neon-glow-emerald">€{Math.round(netProfitMonthly).toLocaleString()}</div>
                                         </div>
-                                    )}
-
-                                    <div className="space-y-2.5 pt-2 border-t border-slate-900/50 text-xs font-semibold text-slate-400">
-                                        <div className="flex justify-between">
-                                            <span>Активни претплатници:</span>
-                                            <strong className="text-white font-mono">{totalActiveClients}</strong>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Продадени прикажувања дневно:</span>
-                                            <strong className="text-white font-mono">{soldShowings} пати</strong>
-                                        </div>
-                                        <div className="flex justify-between text-[11px] text-slate-500">
-                                            <span>Максимум во работни денови:</span>
-                                            <strong className="font-mono">{maxSpotsWeekday} слота ({weekdayHours}ч.)</strong>
-                                        </div>
-                                        <div className="flex justify-between text-[11px] text-slate-500">
-                                            <span>Максимум за викенди:</span>
-                                            <strong className="font-mono">{maxSpotsWeekend} слота ({weekendHours}ч.)</strong>
-                                        </div>
-                                        <div className="flex justify-between items-center pt-2 border-t border-slate-900/50">
-                                            <span>Состојба на мрежата:</span>
-                                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                                                occupancy > 85 ? 'bg-rose-950 text-rose-400 border border-rose-900/30' :
-                                                occupancy > 50 ? 'bg-amber-950 text-amber-400 border border-amber-900/30' :
-                                                'bg-emerald-950 text-emerald-400 border border-emerald-900/30'
-                                            }`}>
-                                                {occupancy > 85 ? 'Речиси полна' : occupancy > 50 ? 'Оптимална' : 'Слободна'}
-                                            </span>
-                                        </div>
+                                        <span className="text-xs text-indigo-300 font-bold block mt-6 border-t border-indigo-500/20 pt-4 font-mono">
+                                            €{Math.round(netProfitYearly).toLocaleString()} / год.
+                                        </span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Summary Cards Grid */}
-                            <div className="grid sm:grid-cols-2 gap-6">
-                                <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-3xl shadow-xl flex flex-col justify-between">
-                                    <div>
-                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Вкупен Месечен Приход</span>
-                                        <div className="text-4xl font-black text-white mt-2">€{Math.round(totalMonthlyRevenue).toLocaleString()}</div>
-                                    </div>
-                                    <span className="text-sm text-indigo-400 font-semibold block mt-6 border-t border-slate-850 pt-4">€{Math.round(totalYearlyRevenue).toLocaleString()} / годишно</span>
-                                </div>
+                        </div>
 
-                                <div className="bg-gradient-to-br from-indigo-900/80 to-purple-900/80 border border-indigo-500/20 p-8 rounded-3xl shadow-2xl flex flex-col justify-between">
-                                    <div>
-                                        <span className="text-xs font-bold text-indigo-200 uppercase tracking-wider block mb-1">Нето Месечен Профит</span>
-                                        <div className="text-4xl font-black text-white mt-2">€{Math.round(netProfitMonthly).toLocaleString()}</div>
-                                    </div>
-                                    <span className="text-sm text-indigo-300 font-semibold block mt-4 border-t border-indigo-500/20 pt-3">€{Math.round(netProfitYearly).toLocaleString()} / годишно</span>
-                                </div>
+                        {/* Future Scaling Strategy Flowchart Alert */}
+                        <div className="bg-gradient-to-r from-indigo-950/50 via-slate-900/60 to-purple-950/50 border border-indigo-500/25 p-8 rounded-3xl shadow-xl flex flex-col md:flex-row items-center gap-6 relative overflow-hidden reveal reveal-scale">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/20">
+                                <TrendingUp className="w-7 h-7 text-white" />
+                            </div>
+                            <div className="space-y-2">
+                                <h4 className="text-lg font-black text-white flex items-center gap-2">
+                                    🚀 Паметно Скалирање: Автоматска Географска Зонска Поделба
+                                </h4>
+                                <p className="text-slate-400 text-sm leading-relaxed font-semibold">
+                                    Кога исполнетоста на мрежата ќе достигне 100%, не е потребен нов скап хардвер! Системот автоматски преминува во режим на <strong>Географски Зони</strong>. Билбордите се разделуваат на N зони, со што капацитетот на рекламен простор инстантно се множи за N пати. Ова веднаш го мултиплицира капацитетот на рекламен простор за N пати (каде N е бројот на зони), со што остваруваме дополнителни приходоносни слотови без потреба од нови инвестиции во хардвер.
+                                </p>
                             </div>
                         </div>
-                    </div>
                     </div>
                 )}
-
-                {/* Zonal Division Scaling Strategy Alert */}
-                <div className="mt-12 bg-gradient-to-r from-indigo-950/40 via-slate-900/60 to-purple-950/40 border border-indigo-900/40 p-8 rounded-3xl shadow-xl flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
-                    <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
-                        <TrendingUp className="w-7 h-7 text-indigo-400" />
-                    </div>
-                    <div className="space-y-2">
-                        <h4 className="text-lg font-bold text-white flex items-center gap-2">
-                            🚀 Стратегија за Идно Скалирање: Поделба на Географски Зони
-                        </h4>
-                        <p className="text-slate-400 text-sm leading-relaxed">
-                            Кога ќе го постигнеме максималниот капацитет на мрежата (исполнетост од 100%), нашиот систем автоматски се реструктуира со <strong>поделба по географски зони</strong>. Наместо сите билборди да ја прикажуваат истата реклама синхронизирано, билбордите ќе се поделат во посебни регионални зони. Ова ни овозможува да добиеме дополнителни независни временски периоди и мултиплициран рекламен простор за нови клиенти. Ова веднаш го мултиплицира капацитетот на рекламен простор за N пати (каде N е бројот на зони), со што остваруваме дополнителни приходоносни слотови без потреба од нови инвестиции во хардвер.
-                        </p>
-                    </div>
-                </div>
             </section>
 
             {/* Profit Sharing Section */}
-            <section id="profit" className="py-24 max-w-7xl mx-auto px-6 border-t border-slate-900 mb-20">
-                <div className="text-center mb-16 space-y-4">
-                    <h2 className="text-3xl md:text-4xl font-extrabold text-white">Поделба на Профит</h2>
-                    <p className="text-slate-400 max-w-2xl mx-auto">Интерактивна поделба на нето заработката помеѓу партнерите со опција за заклучување на полињата.</p>
+            <section id="profit" className="py-24 max-w-7xl mx-auto px-6 border-t border-slate-900/60 mb-20 relative z-10">
+                <div className="text-center mb-16 space-y-4 reveal reveal-scale">
+                    <h2 className="text-3xl md:text-5xl font-black text-white">Интерактивна Поделба на Профит</h2>
+                    <p className="text-slate-400 max-w-2xl mx-auto text-base font-semibold">Симулирајте ја поделбата на нето заработката помеѓу партнерите. Искористете ја опцијата за заклучување за фиксирање вредности.</p>
                 </div>
 
-                <div className="grid lg:grid-cols-12 gap-8 items-start">
+                <div className="grid lg:grid-cols-12 gap-10 items-start">
                     {/* Left: Shareholder sliders with lock state */}
-                    <div className="lg:col-span-6 bg-slate-900/60 border border-slate-800 rounded-3xl p-8 space-y-6">
-                        <h3 className="text-lg font-bold text-white border-b border-slate-800 pb-4 flex items-center gap-2">
+                    <div className="lg:col-span-6 bg-slate-900/40 premium-card rounded-3xl p-8 space-y-8 reveal reveal-left">
+                        <h3 className="text-lg font-black text-white border-b border-slate-900 pb-4 flex items-center gap-2.5">
                             <Users className="w-5 h-5 text-indigo-400" />
-                            Процентуална Распределба
+                            Процентуална Распределба на Партнери
                         </h3>
-                        <div className="space-y-6">
+                        
+                        <div className="space-y-6.5">
                             {shareholders.map(partner => {
-                                // Count how many other unlocked partners there are
                                 const otherUnlockedCount = shareholders.filter(s => s.id !== partner.id && !s.locked).length;
                                 const isSliderDisabled = partner.locked || otherUnlockedCount === 0;
 
                                 return (
-                                    <div key={partner.id} className="space-y-2 bg-slate-950/40 p-5 rounded-2xl border border-slate-900/50">
+                                    <div key={partner.id} className="space-y-3.5 bg-slate-950/20 p-5 rounded-2xl border border-slate-900/50">
                                         <div className="flex justify-between items-center">
-                                            <span className="font-bold text-white text-base">{partner.name}</span>
+                                            <span className="font-extrabold text-white text-base">{partner.name}</span>
                                             <div className="flex items-center gap-3">
                                                 <button
                                                     onClick={() => toggleShareholderLock(partner.id)}
-                                                    className={`p-1.5 rounded-lg border transition-all ${partner.locked ? 'bg-indigo-950/80 border-indigo-500/30 text-indigo-400' : 'bg-slate-900/50 border-slate-800 text-slate-500 hover:text-slate-300'}`}
-                                                    title={partner.locked ? "Отклучи ја вредноста" : "Заклучи ја вредноста"}
+                                                    className={`p-1.5 rounded-lg border transition-all duration-200 ${partner.locked ? 'bg-indigo-950/80 border-indigo-500/40 text-indigo-455 shadow-md shadow-indigo-950/50' : 'bg-slate-900/50 border-slate-800 text-slate-500 hover:text-slate-350'}`}
+                                                    title={partner.locked ? "Отклучи вредност" : "Заклучи вредност"}
                                                 >
                                                     {partner.locked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                                                 </button>
@@ -784,7 +918,7 @@ export const LandingPage: React.FC = () => {
                                                 value={partner.percentage}
                                                 disabled={isSliderDisabled}
                                                 onChange={(e) => handleShareholderPctChange(partner.id, Number(e.target.value))}
-                                                className={`flex-1 h-1.5 rounded-lg appearance-none cursor-pointer accent-indigo-500 ${isSliderDisabled ? 'opacity-30 cursor-not-allowed bg-slate-900' : 'bg-slate-800'}`}
+                                                className={`flex-1 ${isSliderDisabled ? 'opacity-30 cursor-not-allowed' : ''}`}
                                             />
                                         </div>
                                     </div>
@@ -794,30 +928,30 @@ export const LandingPage: React.FC = () => {
                     </div>
 
                     {/* Right: Earnings calculation cards */}
-                    <div className="lg:col-span-6 space-y-6">
-                        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-xl">
-                            <h3 className="text-lg font-bold text-white border-b border-slate-800 pb-4 flex items-center gap-2">
-                                <Wallet className="w-5 h-5 text-emerald-400" />
+                    <div className="lg:col-span-6 space-y-6 reveal reveal-right">
+                        <div className="premium-card rounded-3xl p-8 space-y-8 shadow-xl">
+                            <h3 className="text-lg font-black text-white border-b border-slate-900 pb-4 flex items-center gap-2.5">
+                                <Wallet className="w-5 h-5 text-emerald-450" />
                                 Динамична Распределба на Нето Заработка (€)
                             </h3>
 
-                            <div className="space-y-5">
+                            <div className="space-y-6.5">
                                 {shareholders.map(partner => {
                                     const partnerMonthlyShare = Math.round((netProfitMonthly * partner.percentage) / 100);
                                     const partnerYearlyShare = Math.round((netProfitYearly * partner.percentage) / 100);
 
                                     return (
-                                        <div key={partner.id} className="space-y-2">
+                                        <div key={partner.id} className="space-y-2.5">
                                             <div className="flex justify-between items-center">
-                                                <span className="font-semibold text-slate-300">{partner.name} дел ({partner.percentage}%)</span>
+                                                <span className="font-bold text-slate-300">{partner.name} дел ({partner.percentage}%)</span>
                                                 <div className="text-right">
-                                                    <span className="font-mono font-black text-emerald-400 text-lg">€{partnerMonthlyShare.toLocaleString()} / мес.</span>
+                                                    <span className="font-mono font-black text-emerald-400 text-lg neon-glow-emerald">€{partnerMonthlyShare.toLocaleString()} / мес.</span>
                                                     <span className="block text-xs text-slate-500 font-semibold">€{partnerYearlyShare.toLocaleString()} / год.</span>
                                                 </div>
                                             </div>
-                                            <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-900">
+                                            <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-900 shadow-inner">
                                                 <div 
-                                                    className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-350"
+                                                    className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
                                                     style={{ width: `${partner.percentage}%` }}
                                                 />
                                             </div>
@@ -831,13 +965,13 @@ export const LandingPage: React.FC = () => {
             </section>
 
             {/* Footer */}
-            <footer className="border-t border-slate-900 py-12 text-center text-xs text-slate-600 bg-slate-950">
-                <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <span>© 2026 DOOH Smart Billboards. Сите права се задржани.</span>
-                    <div className="flex gap-6">
-                        <a href="/" className="hover:text-slate-400">Почетна</a>
-                        <a href="/admin" className="hover:text-slate-400">CMS Администрација</a>
-                        <a href="/business/login" className="hover:text-slate-400">Бизнис Портал</a>
+            <footer className="border-t border-slate-900 py-14 text-center text-xs text-slate-500 bg-slate-950 relative z-10">
+                <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <span className="font-semibold">© 2026 DOOH Smart Billboards. Сите права се задржани.</span>
+                    <div className="flex gap-8 font-bold">
+                        <a href="/" className="hover:text-white transition-colors">Почетна</a>
+                        <a href="/admin" className="hover:text-slate-400 hover:text-white transition-colors">CMS Администрација</a>
+                        <a href="/business/login" className="hover:text-slate-450 hover:text-white transition-colors">Бизнис Портал</a>
                     </div>
                 </div>
             </footer>
