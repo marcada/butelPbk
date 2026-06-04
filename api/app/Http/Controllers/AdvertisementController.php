@@ -24,9 +24,9 @@ class AdvertisementController extends Controller
             'type_sidebar' => 'required|boolean',
             'type_billboard' => 'required|boolean',
             // Conditional Image Validation
-            'carousel_image' => 'required_if:type_carousel,true|image|max:2048',
-            'sidebar_image' => 'required_if:type_sidebar,true|image|max:2048',
-            'billboard_image' => 'required_if:type_billboard,true|image|max:2048',
+            'carousel_image' => 'required_if:type_carousel,true|image|max:10240',
+            'sidebar_image' => 'required_if:type_sidebar,true|image|max:10240',
+            'billboard_image' => 'required_if:type_billboard,true|image|max:10240',
         ]);
 
         $carouselPath = null;
@@ -72,9 +72,9 @@ class AdvertisementController extends Controller
             'type_sidebar' => 'required|boolean',
             'type_billboard' => 'required|boolean',
             // Images are optional on update
-            'carousel_image' => 'nullable|image|max:2048',
-            'sidebar_image' => 'nullable|image|max:2048',
-            'billboard_image' => 'nullable|image|max:2048',
+            'carousel_image' => 'nullable|image|max:10240',
+            'sidebar_image' => 'nullable|image|max:10240',
+            'billboard_image' => 'nullable|image|max:10240',
         ]);
 
         // 2. Handle File Replacements

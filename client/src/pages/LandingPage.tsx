@@ -110,7 +110,7 @@ export const LandingPage: React.FC = () => {
         formData.append('client_name', clientName);
         formData.append('title', adTitle);
         formData.append('type_billboard', '1');
-        formData.append('type_carousel', '1');
+        formData.append('type_carousel', '0');
         formData.append('type_sidebar', '0');
         formData.append('billboard_image', selectedFile);
 
@@ -121,7 +121,9 @@ export const LandingPage: React.FC = () => {
             });
 
             if (!res.ok) {
-                throw new Error('Неуспешно качување на рекламата.');
+                const errData = await res.json().catch(() => ({}));
+                const msg = errData.message || (errData.errors ? Object.values(errData.errors).flat().join(' ') : '') || 'Неуспешно качување на рекламата.';
+                throw new Error(msg);
             }
 
             setUploadSuccess(true);
