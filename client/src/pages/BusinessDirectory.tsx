@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Business } from '../types';
-import { MapPin, Phone, Mail, Store, Image as ImageIcon } from 'lucide-react';
+import { MapPin, Phone, Mail, Image as ImageIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const ALL_CATEGORIES = [

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Trash2, Search, Store } from 'lucide-react';
+import { Trash2, Search, Store } from 'lucide-react';
 import type { Business } from '../../types';
 
 export const AdminBusinesses: React.FC = () => {

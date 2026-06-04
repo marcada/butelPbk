@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { SimulationLayout } from './components/SimulationLayout';
+import { LandingPage } from './pages/LandingPage';
 import { PremiumBlog } from './pages/PremiumBlog';
 import { AdminLayout } from './layouts/AdminLayout';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -20,7 +21,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<PremiumBlog />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/blog" element={<PremiumBlog />} />
         <Route path="/street-preview" element={<SimulationLayout />} />
         <Route path="/advertise" element={<Advertise />} />
 

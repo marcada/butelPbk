@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useSimulationStore } from '../store/simulationStore';
 import { api } from '../services/api';
-import { Play, Pause, FastForward, Rewind } from 'lucide-react';
+import { Play, Pause } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const TimeControls: React.FC = () => {
@@ -12,7 +12,7 @@ export const TimeControls: React.FC = () => {
     } = useSimulationStore();
 
     useEffect(() => {
-        let interval: NodeJS.Timeout;
+        let interval: any;
 
         if (isPlaying) {
             interval = setInterval(() => {

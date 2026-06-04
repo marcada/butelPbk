@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, Image as ImageIcon } from 'lucide-react';
-import type { Ad } from '../../types';
 
 // Extend Ad type locally if needed until main types updated, or assume it matches.
 // Actually checking types/index.ts, Ad interface has: id, name, type, content_path, duration.
