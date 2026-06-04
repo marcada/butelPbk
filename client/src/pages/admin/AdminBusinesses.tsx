@@ -1,3 +1,4 @@
+import { API_BASE_URL, SERVER_URL } from '../../services/api';
 import React, { useState, useEffect } from 'react';
 import { Trash2, Search, Store } from 'lucide-react';
 import type { Business } from '../../types';
@@ -12,7 +13,7 @@ export const AdminBusinesses: React.FC = () => {
     }, []);
 
     const fetchBusinesses = () => {
-        fetch('http://localhost:8000/api/businesses')
+        fetch('${API_BASE_URL}/businesses')
             .then(res => res.json())
             .then(data => {
                 setBusinesses(data);
@@ -25,7 +26,7 @@ export const AdminBusinesses: React.FC = () => {
         if (!confirm('Дали сте сигурни дека сакате да го избришете овој бизнис? Ова ќе ги избрише и сите поврзани реклами.')) return;
 
         try {
-            const res = await fetch(`http://localhost:8000/api/businesses/${id}`, {
+            const res = await fetch(`${API_BASE_URL}/businesses/${id}`, {
                 method: 'DELETE',
             });
             if (res.ok) {
@@ -79,7 +80,7 @@ export const AdminBusinesses: React.FC = () => {
                                     <div className="flex items-center">
                                         <div className="flex-shrink-0 h-10 w-10">
                                             {business.image_path ? (
-                                                <img className="h-10 w-10 rounded-lg object-cover" src={`http://localhost:8000${business.image_path}`} alt="" />
+                                                <img className="h-10 w-10 rounded-lg object-cover" src={`${SERVER_URL}${business.image_path}`} alt="" />
                                             ) : (
                                                 <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
                                                     <Store className="w-5 h-5" />

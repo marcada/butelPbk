@@ -1,3 +1,4 @@
+import { API_BASE_URL, SERVER_URL } from '../../services/api';
 import React, { useEffect, useState } from 'react';
 
 interface Category {
@@ -15,7 +16,7 @@ export const AdminCategories: React.FC = () => {
 
     const fetchCategories = async () => {
         try {
-            const response = await fetch('http://localhost:8000/api/categories');
+            const response = await fetch('${API_BASE_URL}/categories');
             const data = await response.json();
             setCategories(data);
         } catch (err) {
@@ -33,7 +34,7 @@ export const AdminCategories: React.FC = () => {
         setError('');
 
         try {
-            const response = await fetch('http://localhost:8000/api/categories', {
+            const response = await fetch('${API_BASE_URL}/categories', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -55,7 +56,7 @@ export const AdminCategories: React.FC = () => {
     const handleDelete = async (id: number) => {
         if (!confirm('Are you sure?')) return;
         try {
-            await fetch(`http://localhost:8000/api/categories/${id}`, { method: 'DELETE' });
+            await fetch(`${API_BASE_URL}/categories/${id}`, { method: 'DELETE' });
             fetchCategories();
         } catch (err) {
             console.error(err);

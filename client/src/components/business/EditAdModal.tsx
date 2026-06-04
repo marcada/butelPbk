@@ -1,3 +1,4 @@
+import { API_BASE_URL, SERVER_URL } from '../../services/api';
 import React, { useState, useEffect } from 'react';
 
 interface Props {
@@ -56,8 +57,8 @@ export const EditAdModal: React.FC<Props> = ({ businessId, businessName, ad, onC
         // Best practice: POST to /update/{id} or POST with _method field.
 
         const url = isEditing
-            ? `http://localhost:8000/api/advertisements/${ad.id}?_method=PUT`
-            : `http://localhost:8000/api/advertisements`;
+            ? `${API_BASE_URL}/advertisements/${ad.id}?_method=PUT`
+            : `${API_BASE_URL}/advertisements`;
 
         try {
             const res = await fetch(url, {

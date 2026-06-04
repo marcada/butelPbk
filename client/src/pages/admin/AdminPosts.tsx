@@ -1,3 +1,4 @@
+import { API_BASE_URL, SERVER_URL } from '../../services/api';
 import React, { useEffect, useState } from 'react';
 import type { Post, Category } from '../../types';
 
@@ -15,7 +16,7 @@ export const AdminPosts: React.FC = () => {
 
     const fetchPosts = async () => {
         try {
-            const response = await fetch('http://localhost:8000/api/posts');
+            const response = await fetch('${API_BASE_URL}/posts');
             const data = await response.json();
             setPosts(data);
         } catch (err) {
@@ -25,7 +26,7 @@ export const AdminPosts: React.FC = () => {
 
     const fetchCategories = async () => {
         try {
-            const response = await fetch('http://localhost:8000/api/categories');
+            const response = await fetch('${API_BASE_URL}/categories');
             const data = await response.json();
             setCategories(data);
         } catch (err) {
@@ -62,7 +63,7 @@ export const AdminPosts: React.FC = () => {
         data.append('image', formData.image);
 
         try {
-            const response = await fetch('http://localhost:8000/api/posts', {
+            const response = await fetch('${API_BASE_URL}/posts', {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -88,7 +89,7 @@ export const AdminPosts: React.FC = () => {
     const handleDelete = async (id: number) => {
         if (!confirm('Are you sure?')) return;
         try {
-            await fetch(`http://localhost:8000/api/posts/${id}`, { method: 'DELETE' });
+            await fetch(`${API_BASE_URL}/posts/${id}`, { method: 'DELETE' });
             fetchPosts();
         } catch (err) {
             console.error(err);
@@ -183,7 +184,7 @@ export const AdminPosts: React.FC = () => {
                                 <tr key={post.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4">
                                         <img
-                                            src={`http://localhost:8000/storage/${post.image_path}`}
+                                            src={`${SERVER_URL}/storage/${post.image_path}`}
                                             alt={post.title}
                                             className="w-12 h-12 rounded-lg object-cover"
                                         />

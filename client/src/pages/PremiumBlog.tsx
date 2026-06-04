@@ -1,3 +1,4 @@
+import { API_BASE_URL, SERVER_URL } from '../services/api';
 import React, { useState, useEffect } from 'react';
 import { BusinessCarousel } from '../components/blog/BusinessCarousel';
 import { EventsSidebar } from '../components/blog/EventsSidebar';
@@ -8,7 +9,7 @@ export const PremiumBlog: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('http://localhost:8000/api/posts')
+        fetch('${API_BASE_URL}/posts')
             .then(res => res.json())
             .then(data => {
                 setPosts(data);
@@ -60,7 +61,7 @@ export const PremiumBlog: React.FC = () => {
                                 <article key={post.id} className="bg-white rounded-3xl shadow-md border border-gray-100 overflow-hidden hover:shadow-2xl transition-all duration-300 group">
                                     <div className="relative overflow-hidden">
                                         <img
-                                            src={`http://localhost:8000/storage/${post.image_path}`}
+                                            src={`${SERVER_URL}/storage/${post.image_path}`}
                                             alt={post.title}
                                             className="w-full h-72 object-cover transition-transform duration-700 group-hover:scale-105"
                                         />
@@ -113,7 +114,7 @@ const AdSpace: React.FC = () => {
     const [ad, setAd] = useState<any>(null);
 
     useEffect(() => {
-        fetch('http://localhost:8000/api/advertisements')
+        fetch('${API_BASE_URL}/advertisements')
             .then(res => res.json())
             .then(data => {
                 // Get a random sidebar ad
@@ -136,7 +137,7 @@ const AdSpace: React.FC = () => {
             <div className="absolute top-0 right-0 bg-gray-100 px-3 py-1 rounded-bl-xl text-[10px] font-bold text-gray-400 tracking-wider z-10">ADVERTISEMENT</div>
             <div className="w-full mt-4 rounded-2xl overflow-hidden relative shadow-inner aspect-[9/10]">
                 <img
-                    src={ad.sidebar_image_path.startsWith('http') ? ad.sidebar_image_path : `http://localhost:8000${ad.sidebar_image_path}`}
+                    src={ad.sidebar_image_path.startsWith('http') ? ad.sidebar_image_path : `${SERVER_URL}${ad.sidebar_image_path}`}
                     alt={ad.title}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />

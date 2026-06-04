@@ -1,3 +1,4 @@
+import { API_BASE_URL, SERVER_URL } from '../../services/api';
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -10,14 +11,14 @@ export const BusinessCarousel: React.FC = () => {
     const itemsPerPage = 4;
 
     useEffect(() => {
-        fetch('http://localhost:8000/api/advertisements')
+        fetch('${API_BASE_URL}/advertisements')
             .then(res => res.json())
             .then(data => {
                 const validAds = data.filter((a: any) => a.type_carousel && a.carousel_image_path).map((a: any) => ({
                     id: a.id,
                     name: a.title,
                     category: a.client_name,
-                    image: a.carousel_image_path.startsWith('http') ? a.carousel_image_path : `http://localhost:8000${a.carousel_image_path}`
+                    image: a.carousel_image_path.startsWith('http') ? a.carousel_image_path : `${SERVER_URL}${a.carousel_image_path}`
                 }));
                 // Duplicate items if not enough to fill carousel loop smoothly
                 setBusinesses([...validAds, ...validAds]);

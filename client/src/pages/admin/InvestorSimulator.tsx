@@ -1,3 +1,4 @@
+import { API_BASE_URL, SERVER_URL } from '../../services/api';
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import type { Package } from '../../types';
@@ -32,7 +33,7 @@ export const InvestorSimulator: React.FC = () => {
 
     const fetchPackages = async () => {
         try {
-            const res = await fetch('http://localhost:8000/api/packages');
+            const res = await fetch('${API_BASE_URL}/packages');
             const data: Package[] = await res.json();
             setPackages(data);
 
@@ -58,7 +59,7 @@ export const InvestorSimulator: React.FC = () => {
         setPackages(updatedPackages);
 
         try {
-            await fetch(`http://localhost:8000/api/packages/${pkg.id}`, {
+            await fetch(`${API_BASE_URL}/packages/${pkg.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ [field]: value })
@@ -221,7 +222,7 @@ export const InvestorSimulator: React.FC = () => {
                         { name: 'Премиум', displays_per_showing: 50, duration: 20, shows_per_day: 80, price: 4500, color: '#8b5cf6' },
                     ];
                     for (const p of defaults) {
-                        await fetch('http://localhost:8000/api/packages', {
+                        await fetch('${API_BASE_URL}/packages', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(p)

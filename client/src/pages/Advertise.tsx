@@ -1,3 +1,4 @@
+import { API_BASE_URL, SERVER_URL } from '../services/api';
 import React, { useState, useEffect } from 'react';
 import type { Package } from '../types';
 import { Check, MapPin, Store, Upload, Image as ImageIcon } from 'lucide-react';
@@ -30,7 +31,7 @@ export const Advertise: React.FC = () => {
     const [adPreviews, setAdPreviews] = useState<string[]>([]);
 
     useEffect(() => {
-        fetch('http://localhost:8000/api/packages')
+        fetch('${API_BASE_URL}/packages')
             .then(res => res.json())
             .then(data => {
                 setPackages(data);
@@ -90,7 +91,7 @@ export const Advertise: React.FC = () => {
                 data.append('ads[]', file);
             });
 
-            const response = await fetch('http://localhost:8000/api/businesses', {
+            const response = await fetch('${API_BASE_URL}/businesses', {
                 method: 'POST',
                 body: data,
                 // Don't set Content-Type header when using FormData; browser does it automatically with boundary

@@ -1,3 +1,4 @@
+import { API_BASE_URL, SERVER_URL } from '../services/api';
 import React, { useState, useEffect } from 'react';
 import type { Business } from '../types';
 import { MapPin, Phone, Mail, Image as ImageIcon } from 'lucide-react';
@@ -15,7 +16,7 @@ export const BusinessDirectory: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('http://localhost:8000/api/businesses')
+        fetch('${API_BASE_URL}/businesses')
             .then(res => res.json())
             .then(data => {
                 setBusinesses(data);
@@ -75,7 +76,7 @@ export const BusinessDirectory: React.FC = () => {
                             <div className="h-48 bg-gray-100 relative overflow-hidden">
                                 {business.image_path ? (
                                     <img
-                                        src={`http://localhost:8000${business.image_path}`}
+                                        src={`${SERVER_URL}${business.image_path}`}
                                         alt={business.name}
                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                     />

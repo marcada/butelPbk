@@ -1,3 +1,4 @@
+import { API_BASE_URL, SERVER_URL } from '../../services/api';
 import React from 'react';
 
 export const AdminDashboard: React.FC = () => {
@@ -8,7 +9,7 @@ export const AdminDashboard: React.FC = () => {
     });
 
     React.useEffect(() => {
-        fetch('http://localhost:8000/api/admin/stats')
+        fetch('${API_BASE_URL}/admin/stats')
             .then(res => res.json())
             .then(data => setStats(data))
             .catch(err => console.error('Error fetching stats:', err));

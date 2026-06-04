@@ -1,3 +1,4 @@
+import { API_BASE_URL, SERVER_URL } from '../../services/api';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,7 +13,7 @@ export const BusinessLogin: React.FC = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        fetch('http://localhost:8000/api/businesses')
+        fetch('${API_BASE_URL}/businesses')
             .then(res => res.json())
             .then(data => setBusinesses(data.data || data)) // Handle paginated or flat response
             .catch(err => console.error(err));
@@ -40,7 +41,7 @@ export const BusinessLogin: React.FC = () => {
                             className="w-full flex items-center p-4 bg-gray-50 hover:bg-indigo-50 border border-gray-200 hover:border-indigo-200 rounded-xl transition-all group"
                         >
                             <img
-                                src={`http://localhost:8000${biz.image_path}`}
+                                src={`${SERVER_URL}${biz.image_path}`}
                                 alt={biz.name}
                                 className="w-12 h-12 rounded-lg object-cover bg-gray-200"
                             />

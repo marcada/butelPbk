@@ -1,3 +1,4 @@
+import { API_BASE_URL, SERVER_URL } from '../../services/api';
 import React, { useState, useEffect } from 'react';
 import { Calendar, MapPin, Clock } from 'lucide-react';
 import type { Event } from '../../types';
@@ -6,7 +7,7 @@ export const EventsSidebar: React.FC = () => {
     const [events, setEvents] = useState<Event[]>([]);
 
     useEffect(() => {
-        fetch('http://localhost:8000/api/events')
+        fetch('${API_BASE_URL}/events')
             .then(res => res.json())
             .then(data => setEvents(data))
             .catch(err => console.error("Failed to load events", err));

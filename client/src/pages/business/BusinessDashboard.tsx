@@ -1,3 +1,4 @@
+import { API_BASE_URL, SERVER_URL } from '../../services/api';
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { EditAdModal } from '../../components/business/EditAdModal';
@@ -24,7 +25,7 @@ export const BusinessDashboard: React.FC = () => {
     // Fetch Business & Ads
     useEffect(() => {
         // Fetch Business Info check
-        fetch(`http://localhost:8000/api/businesses/${id}`)
+        fetch(`${API_BASE_URL}/businesses/${id}`)
             .then(res => res.json())
             .then(data => setBusinessName(data.name))
             .catch(console.error);
@@ -37,7 +38,7 @@ export const BusinessDashboard: React.FC = () => {
         // For demo: fetch all ads and filter by client_name == businessName OR business_id
         // Since we added business_id to ads table earlier, we SHOULD use it.
         // But let's check if the API returns all ads for now.
-        fetch('http://localhost:8000/api/advertisements')
+        fetch('${API_BASE_URL}/advertisements')
             .then(res => res.json())
             .then(data => {
                 // Filter by business_id if available logic exists, or client_name match
@@ -52,7 +53,7 @@ export const BusinessDashboard: React.FC = () => {
     const handleDelete = async (adId: number) => {
         if (!confirm("Are you sure you want to delete this ad?")) return;
         try {
-            await fetch(`http://localhost:8000/api/advertisements/${adId}`, { method: 'DELETE' });
+            await fetch(`${API_BASE_URL}/advertisements/${adId}`, { method: 'DELETE' });
             fetchAds(); // Refresh
         } catch (e) {
             console.error(e);
@@ -99,7 +100,7 @@ export const BusinessDashboard: React.FC = () => {
                                 <div className="h-48 bg-gray-100 relative">
                                     {/* Show one of the images */}
                                     <img
-                                        src={`http://localhost:8000${ad.billboard_image_path || ad.carousel_image_path || ad.sidebar_image_path}`}
+                                        src={`${SERVER_URL}${ad.billboard_image_path || ad.carousel_image_path || ad.sidebar_image_path}`}
                                         alt={ad.title}
                                         className="w-full h-full object-cover"
                                     />

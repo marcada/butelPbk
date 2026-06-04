@@ -1,3 +1,4 @@
+import { API_BASE_URL, SERVER_URL } from '../../services/api';
 import React, { useEffect, useState } from 'react';
 import type { Event } from '../../types';
 
@@ -15,7 +16,7 @@ export const AdminEvents: React.FC = () => {
 
     const fetchEvents = async () => {
         try {
-            const response = await fetch('http://localhost:8000/api/events');
+            const response = await fetch('${API_BASE_URL}/events');
             const data = await response.json();
             setEvents(data);
         } catch (err) {
@@ -48,7 +49,7 @@ export const AdminEvents: React.FC = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:8000/api/events', {
+            const response = await fetch('${API_BASE_URL}/events', {
                 method: 'POST',
                 body: data,
             });
@@ -70,7 +71,7 @@ export const AdminEvents: React.FC = () => {
     const handleDelete = async (id: number) => {
         if (!confirm('Are you sure?')) return;
         try {
-            await fetch(`http://localhost:8000/api/events/${id}`, { method: 'DELETE' });
+            await fetch(`${API_BASE_URL}/events/${id}`, { method: 'DELETE' });
             fetchEvents();
         } catch (err) {
             console.error(err);
@@ -174,7 +175,7 @@ export const AdminEvents: React.FC = () => {
                                     <td className="px-6 py-4">
                                         {event.image_path ? (
                                             <img
-                                                src={`http://localhost:8000/storage/${event.image_path}`}
+                                                src={`${SERVER_URL}/storage/${event.image_path}`}
                                                 alt={event.title}
                                                 className="w-12 h-12 rounded-lg object-cover"
                                             />

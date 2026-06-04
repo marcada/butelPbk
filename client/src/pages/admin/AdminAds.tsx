@@ -1,3 +1,4 @@
+import { API_BASE_URL, SERVER_URL } from '../../services/api';
 import React, { useState, useEffect } from 'react';
 import { Trash2, Image as ImageIcon } from 'lucide-react';
 
@@ -23,7 +24,7 @@ export const AdminAds: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('http://localhost:8000/api/advertisements')
+        fetch('${API_BASE_URL}/advertisements')
             .then(res => res.json())
             .then(data => {
                 setAds(data);
@@ -36,7 +37,7 @@ export const AdminAds: React.FC = () => {
         if (!confirm('Дали сте сигурни дека сакате да ја избришете оваа реклама?')) return;
 
         try {
-            const res = await fetch(`http://localhost:8000/api/advertisements/${id}`, {
+            const res = await fetch(`${API_BASE_URL}/advertisements/${id}`, {
                 method: 'DELETE',
             });
             if (res.ok) {
@@ -62,7 +63,7 @@ export const AdminAds: React.FC = () => {
                         <div className="aspect-[9/16] bg-gray-100 relative">
                             {ad.billboard_image_path ? (
                                 <img
-                                    src={`http://localhost:8000${ad.billboard_image_path}`}
+                                    src={`${SERVER_URL}${ad.billboard_image_path}`}
                                     alt={ad.title}
                                     className="w-full h-full object-cover"
                                 />
