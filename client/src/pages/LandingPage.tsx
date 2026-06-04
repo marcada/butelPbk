@@ -621,7 +621,7 @@ export const LandingPage: React.FC = () => {
                                 <div className="pt-6 border-t border-slate-800 space-y-6">
 
                                     {/* Месечни Оперативни Расходи */}
-                                    <div>
+                                                                    <div>
                                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Месечни Оперативни Расходи (Вкупно во €)</label>
                                         <input
                                             type="number"
@@ -629,6 +629,9 @@ export const LandingPage: React.FC = () => {
                                             value={expenses}
                                             onChange={(e) => setExpenses(Number(e.target.value))}
                                         />
+                                        <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
+                                            * Во пресметката не се вклучени трошоците за електрична енергија и интернет (кои не можат моментално точно да се предвидат). Овде се пресметуваат само маркетинг и основни оперативни трошоци.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
