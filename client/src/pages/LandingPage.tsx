@@ -349,8 +349,8 @@ export const LandingPage: React.FC = () => {
                             <li className="flex gap-4">
                                 <span className="text-emerald-500 text-lg font-bold">✓</span>
                                 <div>
-                                    <h4 className="font-bold text-white mb-1">Динамични и „Паметни“ термини</h4>
-                                    <p className="text-sm text-slate-400">Автоматски ротации по временски зони (утрински термин за пекари, вечер за кафулиња/брендови).</p>
+                                    <h4 className="font-bold text-white mb-1">Динамичко временско таргетирање</h4>
+                                    <p className="text-sm text-slate-400">Автоматско менување на рекламите во клучните делови од денот кога фреквенцијата на вашата целна публика е најголема.</p>
                                 </div>
                             </li>
                             <li className="flex gap-4">
