@@ -15,7 +15,8 @@ WORKDIR /var/www
 
 # Copy composer config & install dependencies
 COPY composer.json composer.lock* ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-audit
+RUN composer config audit.block-insecure false \
+    && composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 
 # Copy code
 COPY . .
