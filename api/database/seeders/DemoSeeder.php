@@ -18,6 +18,21 @@ class DemoSeeder extends Seeder
 {
     public function run(): void
     {
+        // Prevent duplicate records on container restarts/reseeds
+        \Schema::disableForeignKeyConstraints();
+        \App\Models\Package::truncate();
+        \App\Models\Display::truncate();
+        \App\Models\Ad::truncate();
+        \App\Models\TimeZone::truncate();
+        \App\Models\Campaign::truncate();
+        \App\Models\Category::truncate();
+        \App\Models\Business::truncate();
+        \App\Models\Advertisement::truncate();
+        \App\Models\Post::truncate();
+        \App\Models\Event::truncate();
+        \DB::table('campaign_time_zone')->delete();
+        \Schema::enableForeignKeyConstraints();
+
         // 0. Create Packages
         $pkgBasic = \App\Models\Package::create([
             'name' => 'Basic',
