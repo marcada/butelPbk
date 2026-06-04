@@ -4,8 +4,7 @@ import { Scene } from '../components/Scene';
 import { TimeControls } from '../components/TimeControls';
 import { api } from '../services/api';
 import { 
-    Upload, TrendingUp, Wallet, Users, 
-    CheckCircle, AlertTriangle, Loader2, BarChart2 
+    TrendingUp, Wallet, Users, BarChart2 
 } from 'lucide-react';
 import type { Package } from '../types';
 
@@ -28,14 +27,6 @@ export const LandingPage: React.FC = () => {
         { id: 2, name: 'Радован', percentage: 50 }
     ]);
     const [calcLoading, setCalcLoading] = useState(true);
-
-    // 2. Upload Ad states
-    const [clientName, setClientName] = useState('');
-    const [adTitle, setAdTitle] = useState('');
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [uploading, setUploading] = useState(false);
-    const [uploadSuccess, setUploadSuccess] = useState(false);
-    const [uploadError, setUploadError] = useState('');
 
     // Fetch packages and initialize displays for simulation
     useEffect(() => {
@@ -101,58 +92,7 @@ export const LandingPage: React.FC = () => {
         });
     };
 
-    // Upload Ad Handler
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setSelectedFile(e.target.files[0]);
-            setUploadError('');
-        }
-    };
 
-    const handleUploadAd = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!clientName || !adTitle || !selectedFile) {
-            setUploadError('Ве молам пополнете ги сите полиња.');
-            return;
-        }
-
-        setUploading(true);
-        setUploadError('');
-        setUploadSuccess(false);
-
-        const formData = new FormData();
-        formData.append('client_name', clientName);
-        formData.append('title', adTitle);
-        formData.append('type_billboard', '1');
-        formData.append('type_carousel', '0');
-        formData.append('type_sidebar', '0');
-        formData.append('billboard_image', selectedFile);
-
-        try {
-            const res = await fetch('http://localhost:8000/api/advertisements', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!res.ok) {
-                const errData = await res.json().catch(() => ({}));
-                const msg = errData.message || (errData.errors ? Object.values(errData.errors).flat().join(' ') : '') || 'Неуспешно качување на рекламата.';
-                throw new Error(msg);
-            }
-
-            setUploadSuccess(true);
-            setClientName('');
-            setAdTitle('');
-            setSelectedFile(null);
-            
-            // Clear success message after 4s
-            setTimeout(() => setUploadSuccess(false), 4000);
-        } catch (err: any) {
-            setUploadError(err.message || 'Се случи грешка.');
-        } finally {
-            setUploading(false);
-        }
-    };
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white overflow-x-hidden">
@@ -283,117 +223,32 @@ export const LandingPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* Live Billboard Simulation & Image Uploader */}
+            {/* Live Billboard Simulation */}
             <section id="simulation" className="py-24 max-w-7xl mx-auto px-6 border-t border-slate-900">
                 <div className="text-center mb-16 space-y-4">
                     <h2 className="text-3xl md:text-4xl font-extrabold text-white">Интерактивна Симулација на Билборди во Градот</h2>
-                    <p className="text-slate-400 max-w-2xl mx-auto">Погледнете ја ротацијата на рекламите во реално време или прикачете своја слика за веднаш да ја тестирате на екраните.</p>
+                    <p className="text-slate-400 max-w-2xl mx-auto">Погледнете ја ротацијата на нашите реклами на билбордите низ градот во реално време.</p>
                 </div>
 
-                <div className="grid lg:grid-cols-12 gap-8 items-start">
-                    {/* Left side: Aspect-ratio locked 3D simulation */}
-                    <div className="lg:col-span-8 space-y-4">
-                        <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden aspect-[5376/3072] w-full relative shadow-2xl">
-                            <Scene />
-                        </div>
-                        {/* Playback indicator & details */}
-                        <div className="bg-slate-900/50 border border-slate-900/60 p-5 rounded-2xl flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span className="font-bold uppercase tracking-wider text-xs text-slate-400">Симулатор Термин:</span>
-                                </div>
-                                <span className="font-mono text-white text-base font-semibold">
-                                    {currentTime ? currentTime.toLocaleTimeString() : '00:00:00'}
-                                </span>
-                            </div>
-                            <div className="text-slate-400 text-xs font-semibold">
-                                Активна Реклама: <span className="text-indigo-400 font-bold">{activeAd ? activeAd.name : 'Нема'}</span>
-                            </div>
-                        </div>
+                <div className="max-w-5xl mx-auto space-y-6">
+                    {/* Aspect-ratio locked 3D simulation */}
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden aspect-[5376/3072] w-full relative shadow-2xl">
+                        <Scene />
                     </div>
-
-                    {/* Right side: Ad Uploader Form */}
-                    <div className="lg:col-span-4 bg-slate-900/60 border border-slate-800 rounded-3xl p-8 shadow-xl">
-                        <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                            <Upload className="w-5 h-5 text-indigo-400" />
-                            Прикачи Нова Реклама
-                        </h3>
-                        <p className="text-xs text-slate-400 mb-6 leading-relaxed">
-                            Прикачете реклама во живо. По успешното зачувување на бекендот, сликата автоматски ќе влезе во симулаторот за презентација.
-                        </p>
-
-                        <form onSubmit={handleUploadAd} className="space-y-5">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Име на Бизнис / Клиент</label>
-                                <input
-                                    type="text"
-                                    placeholder="на пр. Ресторан Gino"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-white"
-                                    value={clientName}
-                                    onChange={(e) => setClientName(e.target.value)}
-                                    required
-                                />
+                    {/* Playback indicator & details */}
+                    <div className="bg-slate-900/50 border border-slate-900/60 p-5 rounded-2xl flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span className="font-bold uppercase tracking-wider text-xs text-slate-400">Симулатор Термин:</span>
                             </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Наслов на Рекламата</label>
-                                <input
-                                    type="text"
-                                    placeholder="на пр. Летен Попуст 20%"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-white"
-                                    value={adTitle}
-                                    onChange={(e) => setAdTitle(e.target.value)}
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Избери Слика за Билборд</label>
-                                <div className="border border-dashed border-slate-800 rounded-xl p-4 text-center cursor-pointer hover:bg-slate-950 transition-colors relative">
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        className="absolute inset-0 opacity-0 cursor-pointer"
-                                        onChange={handleFileChange}
-                                        required
-                                    />
-                                    <Upload className="w-8 h-8 text-slate-500 mx-auto mb-2" />
-                                    <span className="text-xs text-slate-400 block truncate">
-                                        {selectedFile ? selectedFile.name : 'Прикачи слика (JPG, PNG)'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {uploadError && (
-                                <div className="bg-rose-950/20 border border-rose-900/50 text-rose-400 px-4 py-2.5 rounded-xl text-xs flex items-center gap-2">
-                                    <AlertTriangle className="w-4 h-4 shrink-0" />
-                                    {uploadError}
-                                </div>
-                            )}
-
-                            {uploadSuccess && (
-                                <div className="bg-emerald-950/20 border border-emerald-900/50 text-emerald-400 px-4 py-2.5 rounded-xl text-xs flex items-center gap-2">
-                                    <CheckCircle className="w-4 h-4 shrink-0" />
-                                    Рекламата е успешно додадена во ротација!
-                                </div>
-                            )}
-
-                            <button
-                                type="submit"
-                                disabled={uploading}
-                                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-900/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                            >
-                                {uploading ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                        Се зачувува...
-                                    </>
-                                ) : (
-                                    'Активирај на Билбордите'
-                                )}
-                            </button>
-                        </form>
+                            <span className="font-mono text-white text-base font-semibold">
+                                {currentTime ? currentTime.toLocaleTimeString() : '00:00:00'}
+                            </span>
+                        </div>
+                        <div className="text-slate-400 text-xs font-semibold">
+                            Активна Реклама: <span className="text-indigo-400 font-bold">{activeAd ? activeAd.name : 'Нема'}</span>
+                        </div>
                     </div>
                 </div>
             </section>
