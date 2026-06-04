@@ -42,7 +42,7 @@ export const LandingPage: React.FC = () => {
         // Reset simulation parameters to defaults on mount/refresh
         const store = useSimulationStore.getState();
         store.setTime(new Date(new Date().setHours(7, 30, 0, 0))); // Reset back to 07:30:00
-        store.setSpeed(10); // Run at 10x speed by default
+        store.setSpeed(3); // Run at 3x speed by default
         if (!store.isPlaying) {
             store.togglePlay(); // Ensure it starts playing automatically
         }
