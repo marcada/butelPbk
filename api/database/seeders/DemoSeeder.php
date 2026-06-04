@@ -18,19 +18,29 @@ class DemoSeeder extends Seeder
 {
     public function run(): void
     {
-        // Prevent duplicate records on container restarts/reseeds
+        // Prevent duplicate records on container restarts/reseeds using direct SQL delete
         \Schema::disableForeignKeyConstraints();
-        \App\Models\Package::truncate();
-        \App\Models\Display::truncate();
-        \App\Models\Ad::truncate();
-        \App\Models\TimeZone::truncate();
-        \App\Models\Campaign::truncate();
-        \App\Models\Category::truncate();
-        \App\Models\Business::truncate();
-        \App\Models\Advertisement::truncate();
-        \App\Models\Post::truncate();
-        \App\Models\Event::truncate();
+        \DB::table('packages')->delete();
+        \DB::table('displays')->delete();
+        \DB::table('ads')->delete();
+        \DB::table('time_zones')->delete();
+        \DB::table('campaigns')->delete();
+        \DB::table('categories')->delete();
+        \DB::table('businesses')->delete();
+        \DB::table('advertisements')->delete();
+        \DB::table('posts')->delete();
+        \DB::table('events')->delete();
         \DB::table('campaign_time_zone')->delete();
+        
+        // Reset SQLite auto-increment sequences if possible
+        try {
+            \DB::table('sqlite_sequence')->whereIn('name', [
+                'packages', 'displays', 'ads', 'time_zones', 'campaigns', 
+                'categories', 'businesses', 'advertisements', 'posts', 'events'
+            ])->delete();
+        } catch (\Exception $e) {
+            // Ignore if sequences table is locked or unavailable
+        }
         \Schema::enableForeignKeyConstraints();
 
         // 0. Create Packages
